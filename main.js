@@ -151,9 +151,9 @@ class StarRatingPlugin extends Plugin {
     overlay.style.position = 'absolute';
     overlay.style.zIndex = '1000';
     overlay.style.backgroundColor = 'var(--background-primary)';
-    overlay.style.borderRadius = '4px';
-    overlay.style.padding = '2px';
-    overlay.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+    // overlay.style.borderRadius = '4px';
+    // overlay.style.padding = '2px';
+    // overlay.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
     overlay.style.left = `${posCoords.left}px`;
     overlay.style.top = `${posCoords.top}px`;
     
