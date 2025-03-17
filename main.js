@@ -142,7 +142,10 @@ class StarRatingPlugin extends Plugin {
     overlay.style.zIndex = '1000';
     overlay.style.backgroundColor = 'var(--background-primary)';
     overlay.style.left = `${posCoords.left}px`;
-    overlay.style.top = `${posCoords.top}px`;
+
+    // TODO Calculate a more precise vertical position
+    const verticalAdjustment = 2.1;
+    overlay.style.top = `${posCoords.top - verticalAdjustment}px`;
     
     // Store position information for comparison
     overlay.dataset.linePosition = `${line}-${start}`;
@@ -160,6 +163,10 @@ class StarRatingPlugin extends Plugin {
     // Get the editor element and compute its styles
     const editorEl = editor.editorComponent.editorEl;
     const editorStyles = window.getComputedStyle(editorEl);
+
+
+    // Also, ensure vertical alignment matches
+    overlay.style.verticalAlign = editorStyles.verticalAlign || 'baseline';
     
     // Match editor font properties exactly
     overlay.style.fontFamily = editorStyles.fontFamily;
