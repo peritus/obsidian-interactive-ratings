@@ -292,7 +292,7 @@ class InteractiveRatingsPlugin extends Plugin {
     const symbolsArray = [...symbols];
     for (let i = 0; i < symbolCount; i++) {
       const symbolSpan = document.createElement('span');
-      symbolSpan.className = 'interactive-ratings-star';
+      symbolSpan.className = 'interactive-ratings-symbol';
       symbolSpan.textContent = symbolsArray[i];
       symbolSpan.dataset.position = i.toString();
       symbolSpan.dataset.originalChar = symbolsArray[i];
@@ -413,7 +413,7 @@ class InteractiveRatingsPlugin extends Plugin {
   }
 
   addHoverListeners(container) {
-    const stars = container.querySelectorAll('.interactive-ratings-star');
+    const symbols = container.querySelectorAll('.interactive-ratings-symbol');
     const full = container.dataset.full;
     const empty = container.dataset.empty;
     const half = container.dataset.half;
@@ -430,26 +430,26 @@ class InteractiveRatingsPlugin extends Plugin {
       // Determine if we're in the first or second half of the star
       const useHalfSymbol = supportsHalf && positionWithinSymbol < 0.5;
       
-      // Calculate current rating with half-star precision if supported
+      // Calculate current rating with half-symbol precision if supported
       const currentRating = hoveredSymbolIndex + (useHalfSymbol ? 0.5 : 1);
       container.dataset.currentRating = currentRating.toString();
       
-      stars.forEach((star, index) => {
+      symbols.forEach((symbol, index) => {
         if (index < Math.floor(currentRating)) {
-          star.textContent = full;
+          symbol.textContent = full;
         } else if (supportsHalf && index === Math.floor(currentRating) && currentRating % 1 !== 0) {
-          star.textContent = half;
+          symbol.textContent = half;
         } else {
-          star.textContent = empty;
+          symbol.textContent = empty;
         }
       });
     });
     
     container.addEventListener('mouseleave', () => {
       // Reset to original state
-      stars.forEach((star) => {
-        const originalChar = star.dataset.originalChar || empty;
-        star.textContent = originalChar;
+      symbols.forEach((symbol) => {
+        const originalChar = symbol.dataset.originalChar || empty;
+        symbol.textContent = originalChar;
       });
     });
   }
@@ -461,7 +461,7 @@ class InteractiveRatingsPlugin extends Plugin {
         cursor: pointer;
       }
       
-      .interactive-ratings-star {
+      .interactive-ratings-symbol {
         display: inline-block;
         transition: transform 0.1s ease;
       }
