@@ -113,8 +113,8 @@ class InteractiveRatingsPlugin extends Plugin {
 
   handleEditorHover(event, editor) {
     // Clear any existing overlay
-    if (this.starOverlay && !this.isMouseOverElement(event, this.starOverlay)) {
-      this.removeStarOverlay();
+    if (this.ratingsOverlay && !this.isMouseOverElement(event, this.ratingsOverlay)) {
+      this.removeRatingsOverlay();
     }
     
     const target = event.target;
@@ -166,7 +166,7 @@ class InteractiveRatingsPlugin extends Plugin {
           const originalRating = this.calculateRating(pattern, symbolSet);
           
           // Create overlay if it doesn't exist or is for a different pattern
-          if (!this.starOverlay || this.starOverlay.dataset.linePosition !== `${editorPos.line}-${start}`) {
+          if (!this.ratingsOverlay || this.ratingsOverlay.dataset.linePosition !== `${editorPos.line}-${start}`) {
             this.createEditorOverlay(editor, editorPos.line, start, pattern, originalRating, symbolSet, ratingText);
           }
           
@@ -396,19 +396,19 @@ class InteractiveRatingsPlugin extends Plugin {
         endPos
       );
     
-      this.removeStarOverlay();
+      this.removeRatingsOverlay();
     });
   
     
     // Add to document
     document.body.appendChild(overlay);
-    this.starOverlay = overlay;
+    this.ratingsOverlay = overlay;
   }
 
-  removeStarOverlay() {
-    if (this.starOverlay && this.starOverlay.parentNode) {
-      this.starOverlay.parentNode.removeChild(this.starOverlay);
-      this.starOverlay = null;
+  removeRatingsOverlay() {
+    if (this.ratingsOverlay && this.ratingsOverlay.parentNode) {
+      this.ratingsOverlay.parentNode.removeChild(this.ratingsOverlay);
+      this.ratingsOverlay = null;
     }
   }
 
@@ -482,7 +482,7 @@ class InteractiveRatingsPlugin extends Plugin {
     console.log('Unloading Interactive Ratings plugin');
     const styleEl = document.getElementById('interactive-ratings-style');
     if (styleEl) styleEl.remove();
-    this.removeStarOverlay();
+    this.removeRatingsOverlay();
   }
 }
 
