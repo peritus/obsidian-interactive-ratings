@@ -14,7 +14,7 @@ function getUnicodeCharAt(str, index) {
 
 // Define symbol patterns as a global constant
 const SYMBOL_PATTERNS = [
-  { full: '★', empty: '☆', half: null },    // Stars
+  { full: '★', empty: '☆', half: null },    // Symbols
   { full: '●', empty: '○', half: '◐' },     // Circles
   { full: '■', empty: '□', half: '◧' },     // Squares
   { full: '▲', empty: '△', half: null },    // Triangles (no half)
@@ -313,16 +313,16 @@ class InteractiveRatingsPlugin extends Plugin {
     overlay.addEventListener('click', (e) => {
       const containerRect = overlay.getBoundingClientRect();
       const symbolCount = parseInt(overlay.dataset.symbolCount);
-      const starWidth = containerRect.width / symbolCount;
+      const symbolWidth = containerRect.width / symbolCount;
       const relativeX = e.clientX - containerRect.left;
-      const clickedStarIndex = Math.floor(relativeX / starWidth);
-      const positionWithinStar = (relativeX % starWidth) / starWidth;
+      const clickedSymbolIndex = Math.floor(relativeX / symbolWidth);
+      const positionWithinSymbol = (relativeX % symbolWidth) / symbolWidth;
     
-      // Determine if we should use half star or full star based on where within the star was clicked
+      // Determine if we should use half symbol or full symbol based on where within the symbol was clicked
       const supportsHalf = overlay.dataset.supportsHalf === 'true';
-      const useHalfStar = supportsHalf && positionWithinStar < 0.5;
+      const useHalfSymbol = supportsHalf && positionWithinSymbol < 0.5;
     
-      let newRating = clickedStarIndex + (useHalfStar ? 0.5 : 1);
+      let newRating = clickedSymbolIndex + (useHalfSymbol ? 0.5 : 1);
       if (newRating < 0) {
         newRating = 0;
       }
@@ -422,16 +422,16 @@ class InteractiveRatingsPlugin extends Plugin {
     container.addEventListener('mousemove', (e) => {
       const containerRect = container.getBoundingClientRect();
       const symbolCount = parseInt(container.dataset.symbolCount);
-      const starWidth = containerRect.width / symbolCount;
+      const symbolWidth = containerRect.width / symbolCount;
       const relativeX = e.clientX - containerRect.left;
-      const hoveredStarIndex = Math.floor(relativeX / starWidth);
-      const positionWithinStar = (relativeX % starWidth) / starWidth;
+      const hoveredSymbolIndex = Math.floor(relativeX / symbolWidth);
+      const positionWithinSymbol = (relativeX % symbolWidth) / symbolWidth;
       
       // Determine if we're in the first or second half of the star
-      const useHalfStar = supportsHalf && positionWithinStar < 0.5;
+      const useHalfSymbol = supportsHalf && positionWithinSymbol < 0.5;
       
       // Calculate current rating with half-star precision if supported
-      const currentRating = hoveredStarIndex + (useHalfStar ? 0.5 : 1);
+      const currentRating = hoveredSymbolIndex + (useHalfSymbol ? 0.5 : 1);
       container.dataset.currentRating = currentRating.toString();
       
       stars.forEach((star, index) => {
