@@ -9,10 +9,9 @@ const SYMBOL_PATTERNS = [
 
   // Progress bar patterns
   { full: '█', empty: '▁', half: null  },   // Block progress
-  { full: '⣿', empty: '⣀', half: null },    // Braille dots
+  { full: '⣿', empty: '⣀', half: '⡇' },     // Braille dots
   { full: '⬤', empty: '○', half: null },   // Solid/empty circles
   { full: '■', empty: '□', half: null },    // Solid/empty squares
-  { full: '⬛', empty: '⬜', half: null },   // Black/white squares
   { full: '▰', empty: '▱', half: null },    // Dotted squares
   { full: '◼', empty: '▭', half: null },    // Filled/empty rectangles
   { full: '▮', empty: '▯', half: null },    // Vertical bars
