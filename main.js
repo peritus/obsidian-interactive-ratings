@@ -20,8 +20,8 @@ class StarRatingPlugin extends Plugin {
       if (!editor) return;
       
       // Check if target is in the editor
-      // const editorEl = editor.getScrollerElement();
-      // if (!editorEl.contains(evt.target)) return;
+      const editorEl = editor.editorComponent.editorEl;
+      if (!editorEl.contains(evt.target)) return;
       
       // Process the event
       this.handleEditorHover(evt, editor);
