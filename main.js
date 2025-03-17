@@ -226,7 +226,7 @@ class InteractiveRatingsPlugin extends Plugin {
     
     // Create container for the overlay
     const overlay = document.createElement('div');
-    overlay.className = 'star-rating-editor-overlay';
+    overlay.className = 'interactive-ratings-editor-overlay';
     overlay.style.position = 'fixed';
     overlay.style.zIndex = '1000';
     overlay.style.backgroundColor = 'var(--background-primary)';
@@ -466,7 +466,7 @@ class InteractiveRatingsPlugin extends Plugin {
         transition: transform 0.1s ease;
       }
       
-      .star-rating-editor-overlay {
+      .interactive-ratings-editor-overlay {
         display: inline-block;
         cursor: pointer;
       }
