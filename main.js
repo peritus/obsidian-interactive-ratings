@@ -19,8 +19,6 @@ const SYMBOL_PATTERNS = [
   { full: '■', empty: '□', half: '◧' },     // Squares
   { full: '▲', empty: '△', half: null },    // Triangles (no half)
 
-  { full: '🌕', empty: '🌑', half: '🌗' },    // Moon emoji
-
   // Progress bar patterns
   { full: '█', empty: '▁', half: null  },   // Block progress
   { full: '⣿', empty: '⣀', half: '⡇' },     // Braille dots
