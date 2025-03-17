@@ -456,7 +456,7 @@ class InteractiveRatingsPlugin extends Plugin {
 
   addStyle() {
     const css = `
-      .star-rating-container {
+      .interactive-ratings-container {
         display: inline-block;
         cursor: pointer;
       }
