@@ -10,7 +10,7 @@ class StarRatingPlugin extends Plugin {
     });
 
     // For editing mode, add event listener to the app's workspace
-    this.registerDomEvent(document, 'mouseover', (evt) => {
+    this.registerDomEvent(document, 'mousemove', (evt) => {
       // Check if we're in editor mode
       const activeLeaf = this.app.workspace.activeLeaf;
       if (!activeLeaf || !activeLeaf.view || activeLeaf.view.getMode() !== 'source') return;
@@ -123,7 +123,9 @@ class StarRatingPlugin extends Plugin {
 
   handleEditorHover(event, editor) {
     // Clear any existing overlay
-    this.removeStarOverlay();
+    if (this.starOverlay && !this.isMouseOverElement(event, this.starOverlay)) {
+      this.removeStarOverlay();
+    }
     
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
@@ -138,24 +140,56 @@ class StarRatingPlugin extends Plugin {
     // Check for star sequences
     const starRegex = /[★☆]{5}/g;
     let match;
-    let foundMatch = false;
     
     while ((match = starRegex.exec(line)) !== null) {
       const start = match.index;
       const end = start + 5;
       
-      // Check if the cursor is within this sequence
-      if (editorPos.ch >= start && editorPos.ch <= end) {
-        foundMatch = true;
-        
+      // Calculate character position range
+      const startPos = {line: editorPos.line, ch: start};
+      const endPos = {line: editorPos.line, ch: end};
+      
+      // Get screen coordinates for start and end of star pattern
+      const startCoords = editor.coordsAtPos(startPos);
+      const endCoords = editor.coordsAtPos(endPos);
+      
+      if (!startCoords || !endCoords) continue;
+      
+      // Check if mouse is inside the star region
+      if (this.isMouseWithinRegion(event, startCoords, endCoords)) {
         // Calculate original rating
         const originalRating = match[0].split('').filter(char => char === '★').length;
         
-        // Create overlay
-        this.createEditorOverlay(editor, editorPos.line, start, match[0], originalRating);
-        break;
+        // Create overlay if it doesn't exist or is for a different star pattern
+        if (!this.starOverlay || this.starOverlay.dataset.linePosition !== `${editorPos.line}-${start}`) {
+          this.createEditorOverlay(editor, editorPos.line, start, match[0], originalRating);
+        }
+        
+        return;
       }
     }
+  }
+
+  isMouseWithinRegion(event, startCoords, endCoords) {
+    // Add a small buffer to make clicking easier
+    const buffer = 2;
+    
+    return (
+      event.clientX >= startCoords.left - buffer &&
+      event.clientX <= endCoords.right + buffer &&
+      event.clientY >= startCoords.top - buffer &&
+      event.clientY <= endCoords.bottom + buffer
+    );
+  }
+  
+  isMouseOverElement(event, element) {
+    const rect = element.getBoundingClientRect();
+    return (
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    );
   }
 
   createEditorOverlay(editor, line, start, stars, originalRating) {
@@ -171,6 +205,9 @@ class StarRatingPlugin extends Plugin {
     overlay.style.backgroundColor = 'var(--background-primary)';
     overlay.style.left = `${posCoords.left}px`;
     overlay.style.top = `${posCoords.top}px`;
+    
+    // Store position information for comparison
+    overlay.dataset.linePosition = `${line}-${start}`;
     
     // Store original rating
     overlay.dataset.originalRating = originalRating;
@@ -215,11 +252,6 @@ class StarRatingPlugin extends Plugin {
       );
       
       this.removeStarOverlay();
-    });
-    
-    // Add mouseleave to remove overlay
-    overlay.addEventListener('mouseleave', () => {
-      setTimeout(() => this.removeStarOverlay(), 300);
     });
     
     // Add to document
