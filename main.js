@@ -4,11 +4,6 @@ class StarRatingPlugin extends Plugin {
   async onload() {
     console.log('Loading Star Rating plugin');
 
-    // Register the markdown post processor for Reading mode
-    this.registerMarkdownPostProcessor((element, context) => {
-      this.processStarRatings(element);
-    });
-
     // For editing mode, add event listener to the app's workspace
     this.registerDomEvent(document, 'mousemove', (evt) => {
       // Get the editor element
@@ -25,96 +20,6 @@ class StarRatingPlugin extends Plugin {
 
     // Add CSS to the document
     this.addStyle();
-  }
-
-  processStarRatings(element) {
-    // Find all text nodes in the document
-    const walker = document.createTreeWalker(
-      element,
-      NodeFilter.SHOW_TEXT,
-      null,
-      false
-    );
-
-    const nodesToProcess = [];
-    let currentNode;
-    
-    // Collect all text nodes
-    while ((currentNode = walker.nextNode())) {
-      if (currentNode.nodeValue.match(/[★☆]{5}/)) {
-        nodesToProcess.push(currentNode);
-      }
-    }
-
-    // Process each node containing star patterns
-    nodesToProcess.forEach(textNode => {
-      const text = textNode.nodeValue;
-      const matches = text.match(/([★☆]{5})/g);
-      
-      if (!matches) return;
-      
-      let lastIndex = 0;
-      const fragments = [];
-      
-      // Split the text into fragments with star ratings converted to interactive elements
-      for (const match of matches) {
-        const index = text.indexOf(match, lastIndex);
-        
-        // Add text before the match
-        if (index > lastIndex) {
-          fragments.push(document.createTextNode(text.substring(lastIndex, index)));
-        }
-        
-        // Create interactive rating container
-        const ratingContainer = document.createElement('span');
-        ratingContainer.className = 'star-rating-container';
-        ratingContainer.style.display = 'inline-block';
-        ratingContainer.style.cursor = 'pointer';
-        
-        // Calculate the original rating
-        const originalRating = match.split('').filter(char => char === '★').length;
-        ratingContainer.dataset.originalRating = originalRating;
-        
-        // Add individual star elements
-        for (let i = 0; i < 5; i++) {
-          const star = document.createElement('span');
-          star.className = 'star-rating-star';
-          star.textContent = match[i] === '★' ? '★' : '☆';
-          star.dataset.position = i.toString();
-          star.dataset.originalChar = match[i];
-          ratingContainer.appendChild(star);
-        }
-        
-        // Add hover event listeners
-        this.addHoverListeners(ratingContainer);
-        
-        // Add click event listener to log ratings
-        ratingContainer.addEventListener('click', (e) => {
-          const target = e.target;
-          if (!target.classList.contains('star-rating-star')) return;
-          
-          const position = parseInt(target.dataset.position);
-          const originalRating = parseInt(ratingContainer.dataset.originalRating);
-          
-          console.log(`Original rating: ${originalRating}/5, Current hover position: ${position + 1}/5`);
-        });
-        
-        fragments.push(ratingContainer);
-        lastIndex = index + match.length;
-      }
-      
-      // Add any remaining text
-      if (lastIndex < text.length) {
-        fragments.push(document.createTextNode(text.substring(lastIndex)));
-      }
-      
-      // Replace the original text node with the fragments
-      const parent = textNode.parentNode;
-      fragments.forEach(fragment => {
-        parent.insertBefore(fragment, textNode);
-      });
-      parent.removeChild(textNode);
-    });
   }
 
   handleEditorHover(event, editor) {
