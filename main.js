@@ -53,6 +53,45 @@ class StarRatingPlugin extends Plugin {
     this.addStyle();
   }
 
+  parseRatingText(line, start, end) {
+    // Check for rating patterns like "3/5", "(3/5)", "60%", "(60%)" after the symbols
+    const afterSymbols = line.substring(end);
+    const ratingTextMatch = afterSymbols.match(/^\s*(?:\((\d+)\/(\d+)\)|(\d+)\/(\d+)|(?:\()?(\d+)%(?:\))?)/);
+    
+    if (ratingTextMatch) {
+      let format = '';
+      let numerator = 0;
+      let denominator = 0;
+      
+      if (ratingTextMatch[1] && ratingTextMatch[2]) {
+        // (3/5) format
+        format = 'fraction-parentheses';
+        numerator = parseInt(ratingTextMatch[1]);
+        denominator = parseInt(ratingTextMatch[2]);
+      } else if (ratingTextMatch[3] && ratingTextMatch[4]) {
+        // 3/5 format
+        format = 'fraction';
+        numerator = parseInt(ratingTextMatch[3]);
+        denominator = parseInt(ratingTextMatch[4]);
+      } else if (ratingTextMatch[5]) {
+        // 60% or (60%) format
+        format = afterSymbols.includes('(') ? 'percent-parentheses' : 'percent';
+        numerator = parseInt(ratingTextMatch[5]);
+        denominator = 100;
+      }
+      
+      return {
+        format,
+        numerator,
+        denominator,
+        text: ratingTextMatch[0],
+        endPosition: end + ratingTextMatch[0].length
+      };
+    }
+    
+    return null;
+  }
+
   handleEditorHover(event, editor) {
     // Clear any existing overlay
     if (this.starOverlay && !this.isMouseOverElement(event, this.starOverlay)) {
@@ -80,11 +119,15 @@ class StarRatingPlugin extends Plugin {
       let match;
       while ((match = regex.exec(line)) !== null) {
         const start = match.index;
-        const end = start + 5;
+        const end = start + match[0].length;
+        
+        // Parse rating text if present
+        const ratingText = this.parseRatingText(line, start, end);
+        const textEndPosition = ratingText ? ratingText.endPosition : end;
         
         // Calculate character position range
         const startPos = {line: editorPos.line, ch: start};
-        const endPos = {line: editorPos.line, ch: end};
+        const endPos = {line: editorPos.line, ch: textEndPosition};
         
         // Get screen coordinates for start and end of pattern
         const startCoords = editor.coordsAtPos(startPos);
@@ -105,7 +148,7 @@ class StarRatingPlugin extends Plugin {
           
           // Create overlay if it doesn't exist or is for a different pattern
           if (!this.starOverlay || this.starOverlay.dataset.linePosition !== `${editorPos.line}-${start}`) {
-            this.createEditorOverlay(editor, editorPos.line, start, pattern, originalRating, symbolSet);
+            this.createEditorOverlay(editor, editorPos.line, start, pattern, originalRating, symbolSet, ratingText);
           }
           
           return;
@@ -156,7 +199,7 @@ class StarRatingPlugin extends Plugin {
     );
   }
 
-  createEditorOverlay(editor, line, start, symbols, originalRating, symbolSet) {
+  createEditorOverlay(editor, line, start, symbols, originalRating, symbolSet, ratingText) {
     // Get coordinates for the position
     const posCoords = editor.coordsAtPos({line: line, ch: start});
     if (!posCoords) return;
@@ -182,6 +225,17 @@ class StarRatingPlugin extends Plugin {
     overlay.dataset.empty = symbolSet.empty;
     overlay.dataset.half = symbolSet.half || '';
     overlay.dataset.supportsHalf = symbolSet.half ? 'true' : 'false';
+
+    if (ratingText) {
+      overlay.dataset.hasRatingText = 'true';
+      overlay.dataset.ratingFormat = ratingText.format;
+      overlay.dataset.ratingNumerator = ratingText.numerator;
+      overlay.dataset.ratingDenominator = ratingText.denominator;
+      overlay.dataset.ratingText = ratingText.text;
+      overlay.dataset.ratingEndPosition = ratingText.endPosition;
+    } else {
+      overlay.dataset.hasRatingText = 'false';
+    }
     
     // Track current hover position
     overlay.dataset.currentRating = "0";
@@ -263,12 +317,53 @@ class StarRatingPlugin extends Plugin {
         }
       }
 
-      // Update the editor
-      editor.replaceRange(
-        newSymbols,
-        {line: line, ch: start},
-        {line: line, ch: start + symbolCount}
-      );
+      // Handle rating text update
+      let updatedRatingText = '';
+      if (overlay.dataset.hasRatingText === 'true') {
+        const format = overlay.dataset.ratingFormat;
+        const denominator = parseInt(overlay.dataset.ratingDenominator);
+        
+        // Calculate new numerator based on rating
+        let newNumerator;
+        if (format.includes('percent')) {
+          newNumerator = Math.round((newRating / symbolCount) * 100);
+        } else {
+          newNumerator = Math.round(newRating / symbolCount * denominator);
+        }
+        
+        // Format the text based on the original format
+        switch (format) {
+          case 'fraction':
+            updatedRatingText = ` ${newNumerator}/${denominator}`;
+            break;
+          case 'fraction-parentheses':
+            updatedRatingText = ` (${newNumerator}/${denominator})`;
+            break;
+          case 'percent':
+            updatedRatingText = ` ${newNumerator}%`;
+            break;
+          case 'percent-parentheses':
+            updatedRatingText = ` (${newNumerator}%)`;
+            break;
+        }
+      }
+      
+      // Update the editor with both the new symbols and rating text
+      if (updatedRatingText) {
+        // If there's rating text, replace the whole range
+        editor.replaceRange(
+          newSymbols + updatedRatingText,
+          {line: line, ch: start},
+          {line: line, ch: parseInt(overlay.dataset.ratingEndPosition)}
+        );
+      } else {
+        // If no rating text, just replace the symbols
+        editor.replaceRange(
+          newSymbols,
+          {line: line, ch: start},
+          {line: line, ch: start + symbolCount}
+        );
+      }
       
       this.removeStarOverlay();
     });
