@@ -71,7 +71,7 @@ class StarRatingPlugin extends Plugin {
     
     // Generate regex patterns from the symbol sets
     const symbolRegexes = SYMBOL_PATTERNS.map(symbols => {
-      const pattern = `[${symbols.full}${symbols.empty}${symbols.half ? symbols.half : ''}]{5}`;
+      const pattern = `[${symbols.full}${symbols.empty}${symbols.half ? symbols.half : ''}]{3,}`;
       return new RegExp(pattern, 'g');
     });
     
@@ -210,8 +210,11 @@ class StarRatingPlugin extends Plugin {
     // Prevent any text selection that might cause movement
     overlay.style.userSelect = 'none';
     
+    const symbolCount = symbols.length;
+    overlay.dataset.symbolCount = symbolCount;
+
     // Add symbols to the overlay
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < symbolCount; i++) {
       const symbolSpan = document.createElement('span');
       symbolSpan.className = 'star-rating-star';
       symbolSpan.textContent = symbols[i];
@@ -222,8 +225,8 @@ class StarRatingPlugin extends Plugin {
       symbolSpan.style.margin = '0';
       symbolSpan.style.height = 'auto';
       symbolSpan.style.display = 'inline-block';
-      symbolSpan.style.width = '20%'; // Make each star take exactly 1/5 of the width
-
+      symbolSpan.style.width = `${100 / symbolCount}%`; // Make each star take equal width
+      
       overlay.appendChild(symbolSpan);
     }
     
@@ -233,7 +236,8 @@ class StarRatingPlugin extends Plugin {
     // Add click listener to update text
     overlay.addEventListener('click', (e) => {
       const containerRect = overlay.getBoundingClientRect();
-      const starWidth = containerRect.width / 5;
+      const symbolCount = parseInt(overlay.dataset.symbolCount);
+      const starWidth = containerRect.width / symbolCount;
       const relativeX = e.clientX - containerRect.left;
       const clickedStarIndex = Math.floor(relativeX / starWidth);
       const positionWithinStar = (relativeX % starWidth) / starWidth;
@@ -249,7 +253,7 @@ class StarRatingPlugin extends Plugin {
       
       let newSymbols = '';
       
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < symbolCount; i++) {
         if (i < Math.floor(newRating)) {
           newSymbols += full;
         } else if (supportsHalf && i === Math.floor(newRating) && newRating % 1 !== 0) {
@@ -263,7 +267,7 @@ class StarRatingPlugin extends Plugin {
       editor.replaceRange(
         newSymbols,
         {line: line, ch: start},
-        {line: line, ch: start + 5}
+        {line: line, ch: start + symbolCount}
       );
       
       this.removeStarOverlay();
@@ -290,7 +294,8 @@ class StarRatingPlugin extends Plugin {
     
     container.addEventListener('mousemove', (e) => {
       const containerRect = container.getBoundingClientRect();
-      const starWidth = containerRect.width / 5;
+      const symbolCount = parseInt(container.dataset.symbolCount);
+      const starWidth = containerRect.width / symbolCount;
       const relativeX = e.clientX - containerRect.left;
       const hoveredStarIndex = Math.floor(relativeX / starWidth);
       const positionWithinStar = (relativeX % starWidth) / starWidth;
