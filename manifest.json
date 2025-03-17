@@ -1,9 +1,9 @@
 {
-    "id": "star-rating",
-    "name": "Star Rating",
+    "id": "interactive-ratings",
+    "name": "Interactive Ratings",
     "version": "1.0.0",
     "minAppVersion": "0.15.0",
     "author": "You",
-    "description": "Interactive star ratings in markdown."
+    "description": "Interactive Ratings Plugin for Obsidian"
   }
   
