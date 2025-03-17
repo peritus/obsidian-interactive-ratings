@@ -1,5 +1,17 @@
 const { Plugin } = require("obsidian");
 
+function getUnicodeCharLength(str) {
+  return [...str].length;
+}
+
+function getUnicodeSubstring(str, start, end) {
+  return [...str].slice(start, end).join('');
+}
+
+function getUnicodeCharAt(str, index) {
+  return [...str][index];
+}
+
 // Define symbol patterns as a global constant
 const SYMBOL_PATTERNS = [
   { full: '★', empty: '☆', half: null },    // Stars
@@ -55,16 +67,19 @@ class StarRatingPlugin extends Plugin {
     this.addStyle();
   }
 
+
   parseRatingText(line, start, end) {
-    // Check for rating patterns like "3/5", "(3/5)", "60%", "(60%)", "14.5/33", "(14.5/33)" after the symbols
-    const afterSymbols = line.substring(end);
+    // Get the substring after the symbols using Unicode-aware functions
+    const afterSymbols = getUnicodeSubstring(line, end, getUnicodeCharLength(line));
+  
+    // Check for rating patterns
     const ratingTextMatch = afterSymbols.match(/^\s*(?:\(([\d\.]+)\/(\d+)\)|([\d\.]+)\/(\d+)|(?:\()?(\d+)%(?:\))?)/);
-    
+  
     if (ratingTextMatch) {
       let format = '';
       let numerator = 0;
       let denominator = 0;
-      
+  
       if (ratingTextMatch[1] && ratingTextMatch[2]) {
         // (14.5/33) format
         format = 'fraction-parentheses';
@@ -81,18 +96,22 @@ class StarRatingPlugin extends Plugin {
         numerator = parseInt(ratingTextMatch[5]);
         denominator = 100;
       }
-      
+  
+      // Calculate the end position correctly with Unicode-aware calculations
+      const endPosition = end + ratingTextMatch[0].length;
+  
       return {
         format,
         numerator,
         denominator,
         text: ratingTextMatch[0],
-        endPosition: end + ratingTextMatch[0].length
+        endPosition: endPosition
       };
     }
-    
+  
     return null;
   }
+  
 
   handleEditorHover(event, editor) {
     // Clear any existing overlay
@@ -121,8 +140,8 @@ class StarRatingPlugin extends Plugin {
       let match;
       while ((match = regex.exec(line)) !== null) {
         const start = match.index;
-        const end = start + match[0].length;
-        
+        const end = start + getUnicodeCharLength(match[0]);
+
         // Parse rating text if present
         const ratingText = this.parseRatingText(line, start, end);
         const textEndPosition = ratingText ? ratingText.endPosition : end;
@@ -172,7 +191,8 @@ class StarRatingPlugin extends Plugin {
 
   calculateRating(pattern, symbolSet) {
     let rating = 0;
-    for (const char of pattern) {
+    // Use array spread to properly iterate over Unicode characters
+    for (const char of [...pattern]) {
       if (char === symbolSet.full) rating += 1.0;
       else if (symbolSet.half && char === symbolSet.half) rating += 0.5;
     }
@@ -266,16 +286,18 @@ class StarRatingPlugin extends Plugin {
     // Prevent any text selection that might cause movement
     overlay.style.userSelect = 'none';
     
-    const symbolCount = symbols.length;
+    // Use Unicode-aware character counting
+    const symbolCount = getUnicodeCharLength(symbols);
     overlay.dataset.symbolCount = symbolCount;
 
-    // Add symbols to the overlay
+    // Add symbols to the overlay - properly iterate over Unicode characters
+    const symbolsArray = [...symbols];
     for (let i = 0; i < symbolCount; i++) {
       const symbolSpan = document.createElement('span');
       symbolSpan.className = 'star-rating-star';
-      symbolSpan.textContent = symbols[i];
+      symbolSpan.textContent = symbolsArray[i];
       symbolSpan.dataset.position = i.toString();
-      symbolSpan.dataset.originalChar = symbols[i];
+      symbolSpan.dataset.originalChar = symbolsArray[i];
 
       symbolSpan.style.padding = '0';
       symbolSpan.style.margin = '0';
@@ -297,22 +319,22 @@ class StarRatingPlugin extends Plugin {
       const relativeX = e.clientX - containerRect.left;
       const clickedStarIndex = Math.floor(relativeX / starWidth);
       const positionWithinStar = (relativeX % starWidth) / starWidth;
-      
+    
       // Determine if we should use half star or full star based on where within the star was clicked
       const supportsHalf = overlay.dataset.supportsHalf === 'true';
       const useHalfStar = supportsHalf && positionWithinStar < 0.5;
-      
+    
       let newRating = clickedStarIndex + (useHalfStar ? 0.5 : 1);
       if (newRating < 0) {
         newRating = 0;
       }
-
+    
       const full = overlay.dataset.full;
       const empty = overlay.dataset.empty;
       const half = overlay.dataset.half;
-      
+    
       let newSymbols = '';
-      
+    
       for (let i = 0; i < symbolCount; i++) {
         if (i < Math.floor(newRating)) {
           newSymbols += full;
@@ -322,27 +344,24 @@ class StarRatingPlugin extends Plugin {
           newSymbols += empty;
         }
       }
-
+    
       // Handle rating text update
       let updatedRatingText = '';
       if (overlay.dataset.hasRatingText === 'true') {
         const format = overlay.dataset.ratingFormat;
-        // Use the total symbol count for the denominator instead of the stored one
-        const denominator = symbolCount;
-        
+        const denominator = parseInt(overlay.dataset.ratingDenominator);
+    
         // Calculate new numerator based on rating
         let newNumerator;
         if (format.includes('percent')) {
           newNumerator = Math.round((newRating / symbolCount) * 100);
         } else {
-          // For fractions, use the actual rating value which could include half values
           newNumerator = newRating;
-          // If half stars are not supported, ensure it's a whole number
           if (overlay.dataset.supportsHalf !== 'true') {
             newNumerator = Math.round(newNumerator);
           }
         }
-        
+    
         // Format the text based on the original format
         switch (format) {
           case 'fraction':
@@ -359,27 +378,29 @@ class StarRatingPlugin extends Plugin {
             break;
         }
       }
-      
-      
-      // Update the editor with both the new symbols and rating text
-      if (updatedRatingText) {
-        // If there's rating text, replace the whole range
-        editor.replaceRange(
-          newSymbols + updatedRatingText,
-          {line: line, ch: start},
-          {line: line, ch: parseInt(overlay.dataset.ratingEndPosition)}
-        );
+    
+      // IMPORTANT: Make sure we're replacing the entire content, including the rating text
+      let startPos = {line: line, ch: start};
+      let endPos;
+    
+      if (overlay.dataset.hasRatingText === 'true') {
+        // Use the stored rating end position
+        endPos = {line: line, ch: parseInt(overlay.dataset.ratingEndPosition)};
       } else {
-        // If no rating text, just replace the symbols
-        editor.replaceRange(
-          newSymbols,
-          {line: line, ch: start},
-          {line: line, ch: start + symbolCount}
-        );
+        // If there's no rating text, just replace the symbols
+        endPos = {line: line, ch: start + getUnicodeCharLength(symbols)};
       }
-      
+    
+      // Replace the entire content
+      editor.replaceRange(
+        newSymbols + updatedRatingText,
+        startPos,
+        endPos
+      );
+    
       this.removeStarOverlay();
     });
+  
     
     // Add to document
     document.body.appendChild(overlay);
