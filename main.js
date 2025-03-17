@@ -2,10 +2,24 @@ const { Plugin } = require("obsidian");
 
 // Define symbol patterns as a global constant
 const SYMBOL_PATTERNS = [
-  { full: '★', empty: '☆', half: null },     // Stars
+  { full: '★', empty: '☆', half: null },    // Stars
   { full: '●', empty: '○', half: '◐' },     // Circles
   { full: '■', empty: '□', half: '◧' },     // Squares
   { full: '▲', empty: '△', half: null },    // Triangles (no half)
+
+  // Progress bar patterns
+  { full: '█', empty: '▁', half: null  },   // Block progress
+  { full: '⣿', empty: '⣀', half: null },    // Braille dots
+  { full: '⬤', empty: '○', half: null },   // Solid/empty circles
+  { full: '■', empty: '□', half: null },    // Solid/empty squares
+  { full: '⬛', empty: '⬜', half: null },   // Black/white squares
+  { full: '▰', empty: '▱', half: null },    // Dotted squares
+  { full: '◼', empty: '▭', half: null },    // Filled/empty rectangles
+  { full: '▮', empty: '▯', half: null },    // Vertical bars
+  { full: '⬤', empty: '◯', half: null },   // Bold circles
+  { full: '⚫', empty: '⚪', half: null },   // Black/white circles
+  { full: '█', empty: '░', half: null },    // Block/light shade
+
 ];
 
 class StarRatingPlugin extends Plugin {
