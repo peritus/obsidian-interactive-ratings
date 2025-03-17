@@ -35,7 +35,7 @@ const SYMBOL_PATTERNS = [
 
 class InteractiveRatingsPlugin extends Plugin {
   async onload() {
-    console.log('Loading Star Rating plugin');
+    console.log('Loading Interactive Ratings plugin');
 
     // For editing mode, add event listener to the app's workspace
     this.registerDomEvent(document, 'mousemove', (evt) => {
@@ -479,7 +479,7 @@ class InteractiveRatingsPlugin extends Plugin {
   }
 
   onunload() {
-    console.log('Unloading Star Rating plugin');
+    console.log('Unloading Interactive Ratings plugin');
     const styleEl = document.getElementById('interactive-ratings-style');
     if (styleEl) styleEl.remove();
     this.removeStarOverlay();
