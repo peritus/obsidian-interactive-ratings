@@ -75,6 +75,10 @@ class StarRatingPlugin extends Plugin {
         ratingContainer.style.display = 'inline-block';
         ratingContainer.style.cursor = 'pointer';
         
+        // Calculate the original rating
+        const originalRating = match.split('').filter(char => char === '★').length;
+        ratingContainer.dataset.originalRating = originalRating;
+        
         // Add individual star elements
         for (let i = 0; i < 5; i++) {
           const star = document.createElement('span');
@@ -87,6 +91,17 @@ class StarRatingPlugin extends Plugin {
         
         // Add hover event listeners
         this.addHoverListeners(ratingContainer);
+        
+        // Add click event listener to log ratings
+        ratingContainer.addEventListener('click', (e) => {
+          const target = e.target;
+          if (!target.classList.contains('star-rating-star')) return;
+          
+          const position = parseInt(target.dataset.position);
+          const originalRating = parseInt(ratingContainer.dataset.originalRating);
+          
+          console.log(`Original rating: ${originalRating}/5, Current hover position: ${position + 1}/5`);
+        });
         
         fragments.push(ratingContainer);
         lastIndex = index + match.length;
@@ -133,14 +148,17 @@ class StarRatingPlugin extends Plugin {
       if (editorPos.ch >= start && editorPos.ch <= end) {
         foundMatch = true;
         
+        // Calculate original rating
+        const originalRating = match[0].split('').filter(char => char === '★').length;
+        
         // Create overlay
-        this.createEditorOverlay(editor, editorPos.line, start, match[0]);
+        this.createEditorOverlay(editor, editorPos.line, start, match[0], originalRating);
         break;
       }
     }
   }
 
-  createEditorOverlay(editor, line, start, stars) {
+  createEditorOverlay(editor, line, start, stars, originalRating) {
     // Get coordinates for the position
     const posCoords = editor.coordsAtPos({line: line, ch: start});
     if (!posCoords) return;
@@ -151,11 +169,14 @@ class StarRatingPlugin extends Plugin {
     overlay.style.position = 'absolute';
     overlay.style.zIndex = '1000';
     overlay.style.backgroundColor = 'var(--background-primary)';
-    // overlay.style.borderRadius = '4px';
-    // overlay.style.padding = '2px';
-    // overlay.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
     overlay.style.left = `${posCoords.left}px`;
     overlay.style.top = `${posCoords.top}px`;
+    
+    // Store original rating
+    overlay.dataset.originalRating = originalRating;
+    
+    // Track current hover position
+    overlay.dataset.currentHoverPosition = "0";
     
     // Add stars to the overlay
     for (let i = 0; i < 5; i++) {
@@ -170,12 +191,16 @@ class StarRatingPlugin extends Plugin {
     // Add event listeners
     this.addHoverListeners(overlay);
     
-    // Add click listener to update text
+    // Add click listener to update text and log ratings
     overlay.addEventListener('click', (e) => {
       const target = e.target;
       if (!target.classList.contains('star-rating-star')) return;
       
       const position = parseInt(target.dataset.position);
+      const originalRating = parseInt(overlay.dataset.originalRating);
+      
+      console.log(`Original rating: ${originalRating}/5, Current hover position: ${position + 1}/5`);
+      
       let newStars = '';
       
       for (let i = 0; i < 5; i++) {
@@ -217,6 +242,9 @@ class StarRatingPlugin extends Plugin {
       const starWidth = containerRect.width / 5;
       const relativeX = e.clientX - containerRect.left;
       const hoveredPosition = Math.floor(relativeX / starWidth);
+      
+      // Update current hover position
+      container.dataset.currentHoverPosition = (hoveredPosition + 1).toString();
       
       stars.forEach((star, index) => {
         if (index <= hoveredPosition) {
