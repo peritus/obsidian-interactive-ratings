@@ -56,9 +56,9 @@ class StarRatingPlugin extends Plugin {
   }
 
   parseRatingText(line, start, end) {
-    // Check for rating patterns like "3/5", "(3/5)", "60%", "(60%)" after the symbols
+    // Check for rating patterns like "3/5", "(3/5)", "60%", "(60%)", "14.5/33", "(14.5/33)" after the symbols
     const afterSymbols = line.substring(end);
-    const ratingTextMatch = afterSymbols.match(/^\s*(?:\((\d+)\/(\d+)\)|(\d+)\/(\d+)|(?:\()?(\d+)%(?:\))?)/);
+    const ratingTextMatch = afterSymbols.match(/^\s*(?:\(([\d\.]+)\/(\d+)\)|([\d\.]+)\/(\d+)|(?:\()?(\d+)%(?:\))?)/);
     
     if (ratingTextMatch) {
       let format = '';
@@ -66,14 +66,14 @@ class StarRatingPlugin extends Plugin {
       let denominator = 0;
       
       if (ratingTextMatch[1] && ratingTextMatch[2]) {
-        // (3/5) format
+        // (14.5/33) format
         format = 'fraction-parentheses';
-        numerator = parseInt(ratingTextMatch[1]);
+        numerator = parseFloat(ratingTextMatch[1]);
         denominator = parseInt(ratingTextMatch[2]);
       } else if (ratingTextMatch[3] && ratingTextMatch[4]) {
-        // 3/5 format
+        // 14.5/33 format
         format = 'fraction';
-        numerator = parseInt(ratingTextMatch[3]);
+        numerator = parseFloat(ratingTextMatch[3]);
         denominator = parseInt(ratingTextMatch[4]);
       } else if (ratingTextMatch[5]) {
         // 60% or (60%) format
@@ -303,6 +303,10 @@ class StarRatingPlugin extends Plugin {
       const useHalfStar = supportsHalf && positionWithinStar < 0.5;
       
       let newRating = clickedStarIndex + (useHalfStar ? 0.5 : 1);
+      if (newRating < 0) {
+        newRating = 0;
+      }
+
       const full = overlay.dataset.full;
       const empty = overlay.dataset.empty;
       const half = overlay.dataset.half;
@@ -323,14 +327,20 @@ class StarRatingPlugin extends Plugin {
       let updatedRatingText = '';
       if (overlay.dataset.hasRatingText === 'true') {
         const format = overlay.dataset.ratingFormat;
-        const denominator = parseInt(overlay.dataset.ratingDenominator);
+        // Use the total symbol count for the denominator instead of the stored one
+        const denominator = symbolCount;
         
         // Calculate new numerator based on rating
         let newNumerator;
         if (format.includes('percent')) {
           newNumerator = Math.round((newRating / symbolCount) * 100);
         } else {
-          newNumerator = Math.round(newRating / symbolCount * denominator);
+          // For fractions, use the actual rating value which could include half values
+          newNumerator = newRating;
+          // If half stars are not supported, ensure it's a whole number
+          if (overlay.dataset.supportsHalf !== 'true') {
+            newNumerator = Math.round(newNumerator);
+          }
         }
         
         // Format the text based on the original format
@@ -349,6 +359,7 @@ class StarRatingPlugin extends Plugin {
             break;
         }
       }
+      
       
       // Update the editor with both the new symbols and rating text
       if (updatedRatingText) {
