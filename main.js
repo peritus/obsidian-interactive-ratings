@@ -6,6 +6,16 @@ class StarRatingPlugin extends Plugin {
 
     // For editing mode, add event listener to the app's workspace
     this.registerDomEvent(document, 'mousemove', (evt) => {
+      // Check if we're in editor mode
+      const activeLeaf = this.app.workspace.activeLeaf;
+      if (!activeLeaf || !activeLeaf.view) return;
+      
+      // Check if the view is a markdown editor in source mode
+      const isSourceMode = activeLeaf.view.getViewType() === 'markdown' && 
+                           activeLeaf.view.getMode() !== 'preview';
+      
+      if (!isSourceMode) return;
+      
       // Get the editor element
       const editor = activeLeaf.view.editor;
       if (!editor) return;
