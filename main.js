@@ -33,7 +33,7 @@ const SYMBOL_PATTERNS = [
 
 ];
 
-class StarRatingPlugin extends Plugin {
+class InteractiveRatingsPlugin extends Plugin {
   async onload() {
     console.log('Loading Star Rating plugin');
 
@@ -486,4 +486,4 @@ class StarRatingPlugin extends Plugin {
   }
 }
 
-module.exports = StarRatingPlugin;
+module.exports = InteractiveRatingsPlugin;
