@@ -1,5 +1,13 @@
 const { Plugin } = require("obsidian");
 
+// Define symbol patterns as a global constant
+const SYMBOL_PATTERNS = [
+  { full: '★', empty: '☆', half: null },     // Stars
+  { full: '●', empty: '○', half: '◐' },     // Circles
+  { full: '■', empty: '□', half: '◧' },     // Squares
+  { full: '▲', empty: '△', half: null },    // Triangles (no half)
+];
+
 class StarRatingPlugin extends Plugin {
   async onload() {
     console.log('Loading Star Rating plugin');
@@ -48,16 +56,14 @@ class StarRatingPlugin extends Plugin {
     // Get the line at the current position
     const line = editor.getLine(editorPos.line);
     
-    // Define symbol patterns to detect - added the requested pairs
-    const symbolPatterns = [
-      /[★☆]{5}/g,               // Original star pattern
-      /[●○]{5}/g,               // Circles (5)
-      /[■□]{5}/g,               // Squares (6)
-      /[▲△]{5}/g,               // Triangles (11)
-    ];
+    // Generate regex patterns from the symbol sets
+    const symbolRegexes = SYMBOL_PATTERNS.map(symbols => {
+      const pattern = `[${symbols.full}${symbols.empty}${symbols.half ? symbols.half : ''}]{5}`;
+      return new RegExp(pattern, 'g');
+    });
     
     // Check for all symbol patterns
-    for (const regex of symbolPatterns) {
+    for (const regex of symbolRegexes) {
       let match;
       while ((match = regex.exec(line)) !== null) {
         const start = match.index;
@@ -75,19 +81,18 @@ class StarRatingPlugin extends Plugin {
         
         // Check if mouse is inside the region
         if (this.isMouseWithinRegion(event, startCoords, endCoords)) {
-          // Determine filled symbol by checking first character of pattern
+          // Determine pattern type by checking characters
           const pattern = match[0];
-          const filledSymbol = pattern.charAt(0);
-          const emptySymbol = pattern.charAt(pattern.length - 1) !== filledSymbol ? 
-                              pattern.charAt(pattern.length - 1) : 
-                              this.getEmptySymbolFor(filledSymbol);
+          const symbolSet = this.getSymbolSetForPattern(pattern);
           
-          // Calculate original rating
-          const originalRating = pattern.split('').filter(char => char === filledSymbol).length;
+          if (!symbolSet) continue;
+          
+          // Calculate original rating (count full symbols as 1.0 and half symbols as 0.5)
+          const originalRating = this.calculateRating(pattern, symbolSet);
           
           // Create overlay if it doesn't exist or is for a different pattern
           if (!this.starOverlay || this.starOverlay.dataset.linePosition !== `${editorPos.line}-${start}`) {
-            this.createEditorOverlay(editor, editorPos.line, start, pattern, originalRating, filledSymbol, emptySymbol);
+            this.createEditorOverlay(editor, editorPos.line, start, pattern, originalRating, symbolSet);
           }
           
           return;
@@ -96,16 +101,24 @@ class StarRatingPlugin extends Plugin {
     }
   }
 
-  // Helper function to get the empty symbol for a filled symbol
-  getEmptySymbolFor(filledSymbol) {
-    const symbolPairs = {
-      '★': '☆',     // Original stars
-      '●': '○',     // Circles
-      '■': '□',     // Squares
-      '▲': '△',     // Triangles
-    };
-    
-    return symbolPairs[filledSymbol] || '☆'; // Default to empty star
+  getSymbolSetForPattern(pattern) {
+    // Find the symbol set that matches the pattern
+    for (const symbolSet of SYMBOL_PATTERNS) {
+      if (pattern.includes(symbolSet.full) || pattern.includes(symbolSet.empty) || 
+          (symbolSet.half && pattern.includes(symbolSet.half))) {
+        return symbolSet;
+      }
+    }
+    return null;
+  }
+
+  calculateRating(pattern, symbolSet) {
+    let rating = 0;
+    for (const char of pattern) {
+      if (char === symbolSet.full) rating += 1.0;
+      else if (symbolSet.half && char === symbolSet.half) rating += 0.5;
+    }
+    return rating;
   }
 
   isMouseWithinRegion(event, startCoords, endCoords) {
@@ -130,7 +143,7 @@ class StarRatingPlugin extends Plugin {
     );
   }
 
-  createEditorOverlay(editor, line, start, symbols, originalRating, filledSymbol, emptySymbol) {
+  createEditorOverlay(editor, line, start, symbols, originalRating, symbolSet) {
     // Get coordinates for the position
     const posCoords = editor.coordsAtPos({line: line, ch: start});
     if (!posCoords) return;
@@ -150,20 +163,19 @@ class StarRatingPlugin extends Plugin {
     // Store position information for comparison
     overlay.dataset.linePosition = `${line}-${start}`;
     
-    // Store original rating
+    // Store original rating and symbol information
     overlay.dataset.originalRating = originalRating;
-    
-    // Store symbols for this rating
-    overlay.dataset.filledSymbol = filledSymbol;
-    overlay.dataset.emptySymbol = emptySymbol;
+    overlay.dataset.full = symbolSet.full;
+    overlay.dataset.empty = symbolSet.empty;
+    overlay.dataset.half = symbolSet.half || '';
+    overlay.dataset.supportsHalf = symbolSet.half ? 'true' : 'false';
     
     // Track current hover position
-    overlay.dataset.currentHoverPosition = "0";
+    overlay.dataset.currentRating = "0";
 
     // Get the editor element and compute its styles
     const editorEl = editor.editorComponent.editorEl;
     const editorStyles = window.getComputedStyle(editorEl);
-
 
     // Also, ensure vertical alignment matches
     overlay.style.verticalAlign = editorStyles.verticalAlign || 'baseline';
@@ -197,6 +209,7 @@ class StarRatingPlugin extends Plugin {
       symbolSpan.style.margin = '0';
       symbolSpan.style.height = 'auto';
       symbolSpan.style.display = 'inline-block';
+      symbolSpan.style.width = '20%'; // Make each star take exactly 1/5 of the width
 
       overlay.appendChild(symbolSpan);
     }
@@ -206,22 +219,33 @@ class StarRatingPlugin extends Plugin {
     
     // Add click listener to update text
     overlay.addEventListener('click', (e) => {
-      const target = e.target;
-      if (!target.classList.contains('star-rating-star')) return;
+      const containerRect = overlay.getBoundingClientRect();
+      const starWidth = containerRect.width / 5;
+      const relativeX = e.clientX - containerRect.left;
+      const clickedStarIndex = Math.floor(relativeX / starWidth);
+      const positionWithinStar = (relativeX % starWidth) / starWidth;
       
-      const position = parseInt(target.dataset.position);
-      const originalRating = parseInt(overlay.dataset.originalRating);
-      const filledSymbol = overlay.dataset.filledSymbol;
-      const emptySymbol = overlay.dataset.emptySymbol;
+      // Determine if we should use half star or full star based on where within the star was clicked
+      const supportsHalf = overlay.dataset.supportsHalf === 'true';
+      const useHalfStar = supportsHalf && positionWithinStar < 0.5;
       
-      console.log(`Original rating: ${originalRating}/5, Current hover position: ${position + 1}/5`);
+      let newRating = clickedStarIndex + (useHalfStar ? 0.5 : 1);
+      const full = overlay.dataset.full;
+      const empty = overlay.dataset.empty;
+      const half = overlay.dataset.half;
       
       let newSymbols = '';
       
       for (let i = 0; i < 5; i++) {
-        newSymbols += i <= position ? filledSymbol : emptySymbol;
+        if (i < Math.floor(newRating)) {
+          newSymbols += full;
+        } else if (supportsHalf && i === Math.floor(newRating) && newRating % 1 !== 0) {
+          newSymbols += half;
+        } else {
+          newSymbols += empty;
+        }
       }
-      
+
       // Update the editor
       editor.replaceRange(
         newSymbols,
@@ -246,23 +270,32 @@ class StarRatingPlugin extends Plugin {
 
   addHoverListeners(container) {
     const stars = container.querySelectorAll('.star-rating-star');
-    const filledSymbol = container.dataset.filledSymbol;
-    const emptySymbol = container.dataset.emptySymbol;
+    const full = container.dataset.full;
+    const empty = container.dataset.empty;
+    const half = container.dataset.half;
+    const supportsHalf = container.dataset.supportsHalf === 'true';
     
     container.addEventListener('mousemove', (e) => {
       const containerRect = container.getBoundingClientRect();
       const starWidth = containerRect.width / 5;
       const relativeX = e.clientX - containerRect.left;
-      const hoveredPosition = Math.floor(relativeX / starWidth);
+      const hoveredStarIndex = Math.floor(relativeX / starWidth);
+      const positionWithinStar = (relativeX % starWidth) / starWidth;
       
-      // Update current hover position
-      container.dataset.currentHoverPosition = (hoveredPosition + 1).toString();
+      // Determine if we're in the first or second half of the star
+      const useHalfStar = supportsHalf && positionWithinStar < 0.5;
+      
+      // Calculate current rating with half-star precision if supported
+      const currentRating = hoveredStarIndex + (useHalfStar ? 0.5 : 1);
+      container.dataset.currentRating = currentRating.toString();
       
       stars.forEach((star, index) => {
-        if (index <= hoveredPosition) {
-          star.textContent = filledSymbol;
+        if (index < Math.floor(currentRating)) {
+          star.textContent = full;
+        } else if (supportsHalf && index === Math.floor(currentRating) && currentRating % 1 !== 0) {
+          star.textContent = half;
         } else {
-          star.textContent = emptySymbol;
+          star.textContent = empty;
         }
       });
     });
@@ -270,7 +303,7 @@ class StarRatingPlugin extends Plugin {
     container.addEventListener('mouseleave', () => {
       // Reset to original state
       stars.forEach((star) => {
-        const originalChar = star.dataset.originalChar || emptySymbol;
+        const originalChar = star.dataset.originalChar || empty;
         star.textContent = originalChar;
       });
     });
