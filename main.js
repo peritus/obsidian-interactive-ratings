@@ -473,14 +473,14 @@ class InteractiveRatingsPlugin extends Plugin {
     `;
     
     const styleEl = document.createElement('style');
-    styleEl.id = 'star-rating-style';
+    styleEl.id = 'interactive-ratings-style';
     styleEl.textContent = css;
     document.head.appendChild(styleEl);
   }
 
   onunload() {
     console.log('Unloading Star Rating plugin');
-    const styleEl = document.getElementById('star-rating-style');
+    const styleEl = document.getElementById('interactive-ratings-style');
     if (styleEl) styleEl.remove();
     this.removeStarOverlay();
   }
