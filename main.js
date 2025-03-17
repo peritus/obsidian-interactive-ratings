@@ -292,7 +292,7 @@ class InteractiveRatingsPlugin extends Plugin {
     const symbolsArray = [...symbols];
     for (let i = 0; i < symbolCount; i++) {
       const symbolSpan = document.createElement('span');
-      symbolSpan.className = 'star-rating-star';
+      symbolSpan.className = 'interactive-ratings-star';
       symbolSpan.textContent = symbolsArray[i];
       symbolSpan.dataset.position = i.toString();
       symbolSpan.dataset.originalChar = symbolsArray[i];
@@ -413,7 +413,7 @@ class InteractiveRatingsPlugin extends Plugin {
   }
 
   addHoverListeners(container) {
-    const stars = container.querySelectorAll('.star-rating-star');
+    const stars = container.querySelectorAll('.interactive-ratings-star');
     const full = container.dataset.full;
     const empty = container.dataset.empty;
     const half = container.dataset.half;
@@ -461,7 +461,7 @@ class InteractiveRatingsPlugin extends Plugin {
         cursor: pointer;
       }
       
-      .star-rating-star {
+      .interactive-ratings-star {
         display: inline-block;
         transition: transform 0.1s ease;
       }
