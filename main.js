@@ -111,7 +111,7 @@ class StarRatingPlugin extends Plugin {
     // Create container for the overlay
     const overlay = document.createElement('div');
     overlay.className = 'star-rating-editor-overlay';
-    overlay.style.position = 'absolute';
+    overlay.style.position = 'fixed';
     overlay.style.zIndex = '1000';
     overlay.style.backgroundColor = 'var(--background-primary)';
     overlay.style.left = `${posCoords.left}px`;
@@ -125,6 +125,27 @@ class StarRatingPlugin extends Plugin {
     
     // Track current hover position
     overlay.dataset.currentHoverPosition = "0";
+
+    // Get the editor element and compute its styles
+    const editorEl = editor.editorComponent.editorEl;
+    const editorStyles = window.getComputedStyle(editorEl);
+    
+    // Match editor font properties exactly
+    overlay.style.fontFamily = editorStyles.fontFamily;
+    overlay.style.fontSize = editorStyles.fontSize;
+    overlay.style.fontWeight = editorStyles.fontWeight;
+    overlay.style.letterSpacing = editorStyles.letterSpacing;
+    overlay.style.lineHeight = editorStyles.lineHeight;
+    overlay.style.cursor = 'pointer';
+    
+    // Apply exact padding and margins to match editor
+    overlay.style.padding = '0';
+    overlay.style.margin = '0';
+    overlay.style.border = 'none';
+    overlay.style.boxSizing = 'border-box';
+    
+    // Prevent any text selection that might cause movement
+    overlay.style.userSelect = 'none';
     
     // Add stars to the overlay
     for (let i = 0; i < 5; i++) {
@@ -133,6 +154,12 @@ class StarRatingPlugin extends Plugin {
       star.textContent = stars[i];
       star.dataset.position = i.toString();
       star.dataset.originalChar = stars[i];
+
+      star.style.padding = '0';
+      star.style.margin = '0';
+      star.style.height = 'auto';
+      star.style.display = 'inline-block';
+
       overlay.appendChild(star);
     }
     
@@ -211,8 +238,6 @@ class StarRatingPlugin extends Plugin {
     const css = `
       .star-rating-container {
         display: inline-block;
-        color: gold;
-        font-size: 1.2em;
         cursor: pointer;
       }
       
@@ -221,14 +246,8 @@ class StarRatingPlugin extends Plugin {
         transition: transform 0.1s ease;
       }
       
-      .star-rating-star:hover {
-        transform: scale(1.2);
-      }
-      
       .star-rating-editor-overlay {
         display: inline-block;
-        color: gold;
-        font-size: 1.2em;
         cursor: pointer;
       }
     `;
