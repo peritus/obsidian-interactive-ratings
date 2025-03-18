@@ -454,30 +454,6 @@ class InteractiveRatingsPlugin extends Plugin {
     });
   }
 
-  addStyle() {
-    const css = `
-      .interactive-ratings-container {
-        display: inline-block;
-        cursor: pointer;
-      }
-      
-      .interactive-ratings-symbol {
-        display: inline-block;
-        transition: transform 0.1s ease;
-      }
-      
-      .interactive-ratings-editor-overlay {
-        display: inline-block;
-        cursor: pointer;
-      }
-    `;
-    
-    const styleEl = document.createElement('style');
-    styleEl.id = 'interactive-ratings-style';
-    styleEl.textContent = css;
-    document.head.appendChild(styleEl);
-  }
-
   onunload() {
     console.log('Unloading Interactive Ratings plugin');
     const styleEl = document.getElementById('interactive-ratings-style');

@@ -1,0 +1,14 @@
+.interactive-ratings-container {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.interactive-ratings-symbol {
+  display: inline-block;
+  transition: transform 0.1s ease;
+}
+
+.interactive-ratings-editor-overlay {
+  display: inline-block;
+  cursor: pointer;
+}
