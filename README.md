@@ -4,7 +4,7 @@ Add interactive rating symbols to your notes that update with a click.
 
 ## Usage
 
-![demo of the Interactive Ratings Plugin for Obsidian](screencast.gif)
+<img alt="demo of the Interactive Ratings Plugin for Obsidian" src="screencast.gif" width="400" />
 
 Type any supported symbol sequence (minimum 3 identical symbols) in your note. When you hover over these symbols in edit mode, clicking on one of the symbols allowing you to update the rating.
 
