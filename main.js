@@ -33,97 +33,282 @@ const SYMBOL_PATTERNS = [
 
 ];
 
+// Generic function to get position from any pointer event (mouse or touch)
+function getPositionFromEvent(event) {
+  // Return x, y coordinates from either mouse or touch event
+  const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+  const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+  return { clientX, clientY };
+}
+
+// Generic function to check if a point is within a region
+function isPointWithinRegion(point, startCoords, endCoords, buffer = 2) {
+  return (
+    point.clientX >= startCoords.left - buffer &&
+    point.clientX <= endCoords.right + buffer &&
+    point.clientY >= startCoords.top - buffer &&
+    point.clientY <= endCoords.bottom + buffer
+  );
+}
+
+// Generic function to check if a point is over an element
+function isPointOverElement(point, element) {
+  const rect = element.getBoundingClientRect();
+  return (
+    point.clientX >= rect.left &&
+    point.clientX <= rect.right &&
+    point.clientY >= rect.top &&
+    point.clientY <= rect.bottom
+  );
+}
+
+// Calculate rating from event position relative to container
+function calculateRatingFromEvent(event, container) {
+  const point = getPositionFromEvent(event);
+  const containerRect = container.getBoundingClientRect();
+  const symbolCount = parseInt(container.dataset.symbolCount);
+  const symbolWidth = containerRect.width / symbolCount;
+  const relativeX = point.clientX - containerRect.left;
+  const hoveredSymbolIndex = Math.floor(relativeX / symbolWidth);
+  const positionWithinSymbol = (relativeX % symbolWidth) / symbolWidth;
+  
+  const supportsHalf = container.dataset.supportsHalf === 'true';
+  const useHalfSymbol = supportsHalf && positionWithinSymbol < 0.5;
+  
+  return Math.max(0, hoveredSymbolIndex + (useHalfSymbol ? 0.5 : 1));
+}
+
+// Update symbols display based on rating
+function updateSymbolsDisplay(container, rating) {
+  const symbols = container.querySelectorAll('.interactive-ratings-symbol');
+  const full = container.dataset.full;
+  const empty = container.dataset.empty;
+  const half = container.dataset.half;
+  const supportsHalf = container.dataset.supportsHalf === 'true';
+  
+  container.dataset.currentRating = rating.toString();
+  
+  symbols.forEach((symbol, index) => {
+    if (index < Math.floor(rating)) {
+      symbol.textContent = full;
+    } else if (supportsHalf && index === Math.floor(rating) && rating % 1 !== 0) {
+      symbol.textContent = half;
+    } else {
+      symbol.textContent = empty;
+    }
+  });
+}
+
+// Format rating text based on original format and new rating
+function formatRatingText(container, newRating) {
+  if (container.dataset.hasRatingText !== 'true') {
+    return '';
+  }
+  
+  const format = container.dataset.ratingFormat;
+  const denominator = parseInt(container.dataset.ratingDenominator);
+  const symbolCount = parseInt(container.dataset.symbolCount);
+  
+  // Calculate new numerator based on rating
+  let newNumerator;
+  if (format.includes('percent')) {
+    newNumerator = Math.round((newRating / symbolCount) * 100);
+  } else {
+    newNumerator = newRating;
+    if (container.dataset.supportsHalf !== 'true') {
+      newNumerator = Math.round(newNumerator);
+    }
+  }
+  
+  // Format the text based on the original format
+  switch (format) {
+    case 'fraction':
+      return ` ${newNumerator}/${denominator}`;
+    case 'fraction-parentheses':
+      return ` (${newNumerator}/${denominator})`;
+    case 'percent':
+      return ` ${newNumerator}%`;
+    case 'percent-parentheses':
+      return ` (${newNumerator}%)`;
+    default:
+      return '';
+  }
+}
+
+// Create symbol elements for the overlay
+function createSymbolElements(overlay, symbols) {
+  const symbolCount = getUnicodeCharLength(symbols);
+  overlay.dataset.symbolCount = symbolCount;
+
+  // Add symbols to the overlay - properly iterate over Unicode characters
+  const symbolsArray = [...symbols];
+  for (let i = 0; i < symbolCount; i++) {
+    const symbolSpan = document.createElement('span');
+    symbolSpan.className = 'interactive-ratings-symbol';
+    symbolSpan.textContent = symbolsArray[i];
+    symbolSpan.dataset.position = i.toString();
+    symbolSpan.dataset.originalChar = symbolsArray[i];
+
+    symbolSpan.style.padding = '0';
+    symbolSpan.style.margin = '0';
+    symbolSpan.style.height = 'auto';
+    symbolSpan.style.display = 'inline-block';
+    symbolSpan.style.width = `${100 / symbolCount}%`; // Make each star take equal width
+    
+    overlay.appendChild(symbolSpan);
+  }
+}
+
+// Apply the new rating to the editor
+function applyRatingToEditor(editor, container, newRating, line, start, symbols) {
+  const updatedRatingText = formatRatingText(container, newRating);
+  
+  // IMPORTANT: Make sure we're replacing the entire content, including the rating text
+  let startPos = {line: line, ch: start};
+  let endPos;
+
+  if (container.dataset.hasRatingText === 'true') {
+    // Use the stored rating end position
+    endPos = {line: line, ch: parseInt(container.dataset.ratingEndPosition)};
+  } else {
+    // If there's no rating text, just replace the symbols
+    endPos = {line: line, ch: start + getUnicodeCharLength(symbols)};
+  }
+
+  // Get new symbols string based on rating
+  const symbolCount = parseInt(container.dataset.symbolCount);
+  const full = container.dataset.full;
+  const empty = container.dataset.empty;
+  const half = container.dataset.half;
+  const supportsHalf = container.dataset.supportsHalf === 'true';
+
+  let newSymbols = '';
+  for (let i = 0; i < symbolCount; i++) {
+    if (i < Math.floor(newRating)) {
+      newSymbols += full;
+    } else if (supportsHalf && i === Math.floor(newRating) && newRating % 1 !== 0) {
+      newSymbols += half;
+    } else {
+      newSymbols += empty;
+    }
+  }
+
+  // Replace the entire content
+  editor.replaceRange(
+    newSymbols + updatedRatingText,
+    startPos,
+    endPos
+  );
+}
+
+
 class InteractiveRatingsPlugin extends Plugin {
   async onload() {
     console.log('Loading Interactive Ratings plugin');
 
-    // For editing mode, add event listener to the app's workspace
+    // For editing mode, register mouse events
     this.registerDomEvent(document, 'mousemove', (evt) => {
-      // Check if we're in editor mode
-      const activeLeaf = this.app.workspace.activeLeaf;
-      if (!activeLeaf || !activeLeaf.view) return;
-      
-      // Check if the view is a markdown editor in source mode
-      const isSourceMode = activeLeaf.view.getViewType() === 'markdown' && 
-                           activeLeaf.view.getMode() !== 'preview';
-      
-      if (!isSourceMode) return;
-      
-      // Get the editor element
-      const editor = activeLeaf.view.editor;
-      if (!editor) return;
-      
-      // Check if target is in the editor
-      const editorEl = editor.editorComponent.editorEl;
-      if (!editorEl.contains(evt.target)) return;
-      
-      // Process the event
-      this.handleEditorHover(evt, editor);
+      this.handlePointerInteraction(evt, 'move');
     });
+
+    // Add touch events for mobile support
+    this.registerDomEvent(document, 'touchstart', (evt) => {
+      this.handlePointerInteraction(evt, 'start');
+    });
+
+    this.registerDomEvent(document, 'touchmove', (evt) => {
+      this.handlePointerInteraction(evt, 'move');
+    });
+
+    this.registerDomEvent(document, 'touchend', (evt) => {
+      this.handlePointerInteraction(evt, 'end');
+    });
+
+    // Track if we're in a touch interaction
+    this.touchInteractionActive = false;
 
     // Add CSS to the document
     this.addStyle();
   }
 
-
-  parseRatingText(line, start, end) {
-    // Get the substring after the symbols using Unicode-aware functions
-    const afterSymbols = getUnicodeSubstring(line, end, getUnicodeCharLength(line));
-  
-    // Check for rating patterns
-    const ratingTextMatch = afterSymbols.match(/^\s*(?:\(([\d\.]+)\/(\d+)\)|([\d\.]+)\/(\d+)|(?:\()?(\d+)%(?:\))?)/);
-  
-    if (ratingTextMatch) {
-      let format = '';
-      let numerator = 0;
-      let denominator = 0;
-  
-      if (ratingTextMatch[1] && ratingTextMatch[2]) {
-        // (14.5/33) format
-        format = 'fraction-parentheses';
-        numerator = parseFloat(ratingTextMatch[1]);
-        denominator = parseInt(ratingTextMatch[2]);
-      } else if (ratingTextMatch[3] && ratingTextMatch[4]) {
-        // 14.5/33 format
-        format = 'fraction';
-        numerator = parseFloat(ratingTextMatch[3]);
-        denominator = parseInt(ratingTextMatch[4]);
-      } else if (ratingTextMatch[5]) {
-        // 60% or (60%) format
-        format = afterSymbols.includes('(') ? 'percent-parentheses' : 'percent';
-        numerator = parseInt(ratingTextMatch[5]);
-        denominator = 100;
+  // Generic handler for all pointer events (mouse or touch)
+  handlePointerInteraction(evt, interactionType) {
+    // Check if we're in editor mode
+    const activeLeaf = this.app.workspace.activeLeaf;
+    if (!activeLeaf || !activeLeaf.view) return;
+    
+    // Check if the view is a markdown editor in source mode
+    const isSourceMode = activeLeaf.view.getViewType() === 'markdown' && 
+                         activeLeaf.view.getMode() !== 'preview';
+    
+    if (!isSourceMode) return;
+    
+    // Get the editor element
+    const editor = activeLeaf.view.editor;
+    if (!editor) return;
+    
+    // Convert event to a position
+    const point = getPositionFromEvent(evt);
+    
+    // Handle existing overlay
+    if (this.ratingsOverlay) {
+      if (interactionType === 'move') {
+        // Handle move events within overlay
+        if (this.touchInteractionActive || isPointOverElement(point, this.ratingsOverlay)) {
+          // Update rating based on new position
+          const newRating = calculateRatingFromEvent(evt, this.ratingsOverlay);
+          updateSymbolsDisplay(this.ratingsOverlay, newRating);
+          evt.preventDefault();
+          return;
+        } else if (!this.touchInteractionActive) {
+          // For mouse events, if mouse moved outside overlay, remove it
+          this.removeRatingsOverlay();
+        }
+      } else if (interactionType === 'end') {
+        // Handle touch end event - apply rating and remove overlay
+        if (this.touchInteractionActive) {
+          const newRating = calculateRatingFromEvent(evt, this.ratingsOverlay);
+          const line = parseInt(this.ratingsOverlay.dataset.line);
+          const start = parseInt(this.ratingsOverlay.dataset.start);
+          const symbols = this.ratingsOverlay.dataset.originalSymbols;
+          
+          applyRatingToEditor(editor, this.ratingsOverlay, newRating, line, start, symbols);
+          this.touchInteractionActive = false;
+          this.removeRatingsOverlay();
+          evt.preventDefault();
+          return;
+        }
       }
-  
-      // Calculate the end position correctly with Unicode-aware calculations
-      const endPosition = end + ratingTextMatch[0].length;
-  
-      return {
-        format,
-        numerator,
-        denominator,
-        text: ratingTextMatch[0],
-        endPosition: endPosition
-      };
     }
-  
-    return null;
+    
+    // Handle new interactions only on start or mouse move
+    if (interactionType === 'start' || (interactionType === 'move' && evt.type === 'mousemove')) {
+      // Get the editor's info at the current position
+      const editorEl = editor.editorComponent.editorEl;
+      
+      // Skip if target is not in the editor
+      if (evt.target instanceof HTMLElement && !editorEl.contains(evt.target)) return;
+      
+      // For touch events, we need to check if the touch is on a rating
+      let editorPos;
+      
+      if (evt.type === 'touchstart') {
+        // For touch events, get the position from the touch coordinates
+        const touch = evt.touches[0];
+        editorPos = editor.posAtCoords({x: touch.clientX, y: touch.clientY});
+      } else {
+        // For mouse events, use the built-in method
+        editorPos = editor.posAtMouse(evt);
+      }
+      
+      if (!editorPos) return;
+      
+      // Process the rating at the position
+      this.processRatingAtPosition(evt, editor, editorPos, interactionType);
+    }
   }
-  
 
-  handleEditorHover(event, editor) {
-    // Clear any existing overlay
-    if (this.ratingsOverlay && !this.isMouseOverElement(event, this.ratingsOverlay)) {
-      this.removeRatingsOverlay();
-    }
-    
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-    
-    // Get the editor's info at the current position
-    const editorPos = editor.posAtMouse(event);
-    if (!editorPos) return;
-    
+  processRatingAtPosition(evt, editor, editorPos, interactionType) {
     // Get the line at the current position
     const line = editor.getLine(editorPos.line);
     
@@ -154,8 +339,11 @@ class InteractiveRatingsPlugin extends Plugin {
         
         if (!startCoords || !endCoords) continue;
         
-        // Check if mouse is inside the region
-        if (this.isMouseWithinRegion(event, startCoords, endCoords)) {
+        // Get position from event
+        const point = getPositionFromEvent(evt);
+        
+        // Check if pointer is inside the region
+        if (isPointWithinRegion(point, startCoords, endCoords)) {
           // Determine pattern type by checking characters
           const pattern = match[0];
           const symbolSet = this.getSymbolSetForPattern(pattern);
@@ -165,58 +353,24 @@ class InteractiveRatingsPlugin extends Plugin {
           // Calculate original rating (count full symbols as 1.0 and half symbols as 0.5)
           const originalRating = this.calculateRating(pattern, symbolSet);
           
-          // Create overlay if it doesn't exist or is for a different pattern
-          if (!this.ratingsOverlay || this.ratingsOverlay.dataset.linePosition !== `${editorPos.line}-${start}`) {
+          // Create overlay if we're starting an interaction
+          if (interactionType === 'start' || 
+              (interactionType === 'move' && evt.type === 'mousemove' && 
+               (!this.ratingsOverlay || this.ratingsOverlay.dataset.linePosition !== `${editorPos.line}-${start}`))) {
+            
             this.createEditorOverlay(editor, editorPos.line, start, pattern, originalRating, symbolSet, ratingText);
+            
+            // For touch events, mark that we're in an active touch interaction
+            if (evt.type === 'touchstart') {
+              this.touchInteractionActive = true;
+              evt.preventDefault(); // Prevent scrolling while interacting
+            }
           }
           
           return;
         }
       }
     }
-  }
-
-  getSymbolSetForPattern(pattern) {
-    // Find the symbol set that matches the pattern
-    for (const symbolSet of SYMBOL_PATTERNS) {
-      if (pattern.includes(symbolSet.full) || pattern.includes(symbolSet.empty) || 
-          (symbolSet.half && pattern.includes(symbolSet.half))) {
-        return symbolSet;
-      }
-    }
-    return null;
-  }
-
-  calculateRating(pattern, symbolSet) {
-    let rating = 0;
-    // Use array spread to properly iterate over Unicode characters
-    for (const char of [...pattern]) {
-      if (char === symbolSet.full) rating += 1.0;
-      else if (symbolSet.half && char === symbolSet.half) rating += 0.5;
-    }
-    return rating;
-  }
-
-  isMouseWithinRegion(event, startCoords, endCoords) {
-    // Add a small buffer to make clicking easier
-    const buffer = 2;
-    
-    return (
-      event.clientX >= startCoords.left - buffer &&
-      event.clientX <= endCoords.right + buffer &&
-      event.clientY >= startCoords.top - buffer &&
-      event.clientY <= endCoords.bottom + buffer
-    );
-  }
-  
-  isMouseOverElement(event, element) {
-    const rect = element.getBoundingClientRect();
-    return (
-      event.clientX >= rect.left &&
-      event.clientX <= rect.right &&
-      event.clientY >= rect.top &&
-      event.clientY <= rect.bottom
-    );
   }
 
   createEditorOverlay(editor, line, start, symbols, originalRating, symbolSet, ratingText) {
@@ -238,6 +392,9 @@ class InteractiveRatingsPlugin extends Plugin {
     
     // Store position information for comparison
     overlay.dataset.linePosition = `${line}-${start}`;
+    overlay.dataset.line = line;
+    overlay.dataset.start = start;
+    overlay.dataset.originalSymbols = symbols;
     
     // Store original rating and symbol information
     overlay.dataset.originalRating = originalRating;
@@ -284,121 +441,15 @@ class InteractiveRatingsPlugin extends Plugin {
     // Prevent any text selection that might cause movement
     overlay.style.userSelect = 'none';
     
-    // Use Unicode-aware character counting
-    const symbolCount = getUnicodeCharLength(symbols);
-    overlay.dataset.symbolCount = symbolCount;
-
-    // Add symbols to the overlay - properly iterate over Unicode characters
-    const symbolsArray = [...symbols];
-    for (let i = 0; i < symbolCount; i++) {
-      const symbolSpan = document.createElement('span');
-      symbolSpan.className = 'interactive-ratings-symbol';
-      symbolSpan.textContent = symbolsArray[i];
-      symbolSpan.dataset.position = i.toString();
-      symbolSpan.dataset.originalChar = symbolsArray[i];
-
-      symbolSpan.style.padding = '0';
-      symbolSpan.style.margin = '0';
-      symbolSpan.style.height = 'auto';
-      symbolSpan.style.display = 'inline-block';
-      symbolSpan.style.width = `${100 / symbolCount}%`; // Make each star take equal width
-      
-      overlay.appendChild(symbolSpan);
-    }
+    // Create symbol elements
+    createSymbolElements(overlay, symbols);
     
-    // Add event listeners
-    this.addHoverListeners(overlay);
-    
-    // Add click listener to update text
+    // Add click listener for mouse interactions
     overlay.addEventListener('click', (e) => {
-      const containerRect = overlay.getBoundingClientRect();
-      const symbolCount = parseInt(overlay.dataset.symbolCount);
-      const symbolWidth = containerRect.width / symbolCount;
-      const relativeX = e.clientX - containerRect.left;
-      const clickedSymbolIndex = Math.floor(relativeX / symbolWidth);
-      const positionWithinSymbol = (relativeX % symbolWidth) / symbolWidth;
-    
-      // Determine if we should use half symbol or full symbol based on where within the symbol was clicked
-      const supportsHalf = overlay.dataset.supportsHalf === 'true';
-      const useHalfSymbol = supportsHalf && positionWithinSymbol < 0.5;
-    
-      let newRating = clickedSymbolIndex + (useHalfSymbol ? 0.5 : 1);
-      if (newRating < 0) {
-        newRating = 0;
-      }
-    
-      const full = overlay.dataset.full;
-      const empty = overlay.dataset.empty;
-      const half = overlay.dataset.half;
-    
-      let newSymbols = '';
-    
-      for (let i = 0; i < symbolCount; i++) {
-        if (i < Math.floor(newRating)) {
-          newSymbols += full;
-        } else if (supportsHalf && i === Math.floor(newRating) && newRating % 1 !== 0) {
-          newSymbols += half;
-        } else {
-          newSymbols += empty;
-        }
-      }
-    
-      // Handle rating text update
-      let updatedRatingText = '';
-      if (overlay.dataset.hasRatingText === 'true') {
-        const format = overlay.dataset.ratingFormat;
-        const denominator = parseInt(overlay.dataset.ratingDenominator);
-    
-        // Calculate new numerator based on rating
-        let newNumerator;
-        if (format.includes('percent')) {
-          newNumerator = Math.round((newRating / symbolCount) * 100);
-        } else {
-          newNumerator = newRating;
-          if (overlay.dataset.supportsHalf !== 'true') {
-            newNumerator = Math.round(newNumerator);
-          }
-        }
-    
-        // Format the text based on the original format
-        switch (format) {
-          case 'fraction':
-            updatedRatingText = ` ${newNumerator}/${denominator}`;
-            break;
-          case 'fraction-parentheses':
-            updatedRatingText = ` (${newNumerator}/${denominator})`;
-            break;
-          case 'percent':
-            updatedRatingText = ` ${newNumerator}%`;
-            break;
-          case 'percent-parentheses':
-            updatedRatingText = ` (${newNumerator}%)`;
-            break;
-        }
-      }
-    
-      // IMPORTANT: Make sure we're replacing the entire content, including the rating text
-      let startPos = {line: line, ch: start};
-      let endPos;
-    
-      if (overlay.dataset.hasRatingText === 'true') {
-        // Use the stored rating end position
-        endPos = {line: line, ch: parseInt(overlay.dataset.ratingEndPosition)};
-      } else {
-        // If there's no rating text, just replace the symbols
-        endPos = {line: line, ch: start + getUnicodeCharLength(symbols)};
-      }
-    
-      // Replace the entire content
-      editor.replaceRange(
-        newSymbols + updatedRatingText,
-        startPos,
-        endPos
-      );
-    
+      const newRating = calculateRatingFromEvent(e, overlay);
+      applyRatingToEditor(editor, overlay, newRating, line, start, symbols);
       this.removeRatingsOverlay();
     });
-  
     
     // Add to document
     document.body.appendChild(overlay);
@@ -410,50 +461,10 @@ class InteractiveRatingsPlugin extends Plugin {
       this.ratingsOverlay.parentNode.removeChild(this.ratingsOverlay);
       this.ratingsOverlay = null;
     }
+    this.touchInteractionActive = false;
   }
 
-  addHoverListeners(container) {
-    const symbols = container.querySelectorAll('.interactive-ratings-symbol');
-    const full = container.dataset.full;
-    const empty = container.dataset.empty;
-    const half = container.dataset.half;
-    const supportsHalf = container.dataset.supportsHalf === 'true';
-    
-    container.addEventListener('mousemove', (e) => {
-      const containerRect = container.getBoundingClientRect();
-      const symbolCount = parseInt(container.dataset.symbolCount);
-      const symbolWidth = containerRect.width / symbolCount;
-      const relativeX = e.clientX - containerRect.left;
-      const hoveredSymbolIndex = Math.floor(relativeX / symbolWidth);
-      const positionWithinSymbol = (relativeX % symbolWidth) / symbolWidth;
-      
-      // Determine if we're in the first or second half of the star
-      const useHalfSymbol = supportsHalf && positionWithinSymbol < 0.5;
-      
-      // Calculate current rating with half-symbol precision if supported
-      const currentRating = hoveredSymbolIndex + (useHalfSymbol ? 0.5 : 1);
-      container.dataset.currentRating = currentRating.toString();
-      
-      symbols.forEach((symbol, index) => {
-        if (index < Math.floor(currentRating)) {
-          symbol.textContent = full;
-        } else if (supportsHalf && index === Math.floor(currentRating) && currentRating % 1 !== 0) {
-          symbol.textContent = half;
-        } else {
-          symbol.textContent = empty;
-        }
-      });
-    });
-    
-    container.addEventListener('mouseleave', () => {
-      // Reset to original state
-      symbols.forEach((symbol) => {
-        const originalChar = symbol.dataset.originalChar || empty;
-        symbol.textContent = originalChar;
-      });
-    });
-  }
-
+  // Enhanced style with mobile touch support
   addStyle() {
     const css = `
       .interactive-ratings-container {
@@ -469,6 +480,19 @@ class InteractiveRatingsPlugin extends Plugin {
       .interactive-ratings-editor-overlay {
         display: inline-block;
         cursor: pointer;
+        touch-action: none; /* Prevent browser handling of touch gestures */
+        -webkit-user-select: none; /* Prevent text selection on iOS */
+        user-select: none; /* Prevent text selection */
+        -webkit-touch-callout: none; /* Disable callout on long press */
+      }
+
+      /* Make touch targets larger on mobile */
+      @media (max-width: 768px) {
+        .interactive-ratings-symbol {
+          min-width: 24px;
+          min-height: 24px;
+          padding: 2px;
+        }
       }
     `;
     
