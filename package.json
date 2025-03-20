@@ -4,9 +4,18 @@
   "description": "Edit symbol ratings in your Obsidian notes interactively.",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "start": "node main.js",
+    "type-check": "tsc --noEmit"
   },
-  "keywords": ["obsidianmd"],
+  "keywords": [
+    "obsidianmd"
+  ],
   "author": "peritus",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
 }

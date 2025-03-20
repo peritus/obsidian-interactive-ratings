@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+      "target": "es2016",
+      "module": "commonjs",
+      "allowJs": true,               // Allow JavaScript files to be compiled
+      "checkJs": true,               // Type check JavaScript files
+      "outDir": ".",                 // Output directory for compiled files
+      "rootDir": ".",                // Source directory for TypeScript files
+      "esModuleInterop": true,       // Enable import/export compatibility
+      "forceConsistentCasingInFileNames": true,
+      "strict": false,               // Start with strict mode off
+      "noImplicitAny": false,        // Start with implicit any allowed
+      "skipLibCheck": true,
+      "resolveJsonModule": true      // Allow importing JSON files
+    },
+    "include": ["*.ts"],         // Files to include in compilation
+    "exclude": ["node_modules", "dist"]
+  }
