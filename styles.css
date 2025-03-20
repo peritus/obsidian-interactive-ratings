@@ -11,4 +11,17 @@
 .interactive-ratings-editor-overlay {
   display: inline-block;
   cursor: pointer;
+  touch-action: none; /* Prevent browser handling of touch gestures */
+  -webkit-user-select: none; /* Prevent text selection on iOS */
+  user-select: none; /* Prevent text selection */
+  -webkit-touch-callout: none; /* Disable callout on long press */
+}
+
+/* Make touch targets larger on mobile */
+@media (max-width: 768px) {
+  .interactive-ratings-symbol {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 2px;
+  }
 }
