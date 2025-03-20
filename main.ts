@@ -38,8 +38,6 @@ class InteractiveRatingsPlugin extends Plugin {
   ratingsOverlay: HTMLElement | null;
 
   async onload() {
-    console.log('Loading Interactive Ratings plugin');
-    
     // For editing mode, add event listener to the app's workspace
     this.registerDomEvent(document, 'mousemove', (evt) => {
       // Check if we're in editor mode using getActiveViewOfType instead of activeLeaf
@@ -449,7 +447,6 @@ class InteractiveRatingsPlugin extends Plugin {
   }
 
   onunload() {
-    console.log('Unloading Interactive Ratings plugin');
     const styleEl = document.getElementById('interactive-ratings-style');
     if (styleEl) styleEl.remove();
     this.removeRatingsOverlay();
