@@ -1,4 +1,4 @@
-const { Plugin } = require("obsidian");
+import { MarkdownView, Plugin } from 'obsidian';
 
 function getUnicodeCharLength(str) {
   return [...str].length;
@@ -34,35 +34,29 @@ const SYMBOL_PATTERNS = [
 ];
 
 class InteractiveRatingsPlugin extends Plugin {
+
+  ratingsOverlay: HTMLElement | null;
+
   async onload() {
     console.log('Loading Interactive Ratings plugin');
-
+    
     // For editing mode, add event listener to the app's workspace
     this.registerDomEvent(document, 'mousemove', (evt) => {
-      // Check if we're in editor mode
-      const activeLeaf = this.app.workspace.activeLeaf;
-      if (!activeLeaf || !activeLeaf.view) return;
+      // Check if we're in editor mode using getActiveViewOfType instead of activeLeaf
+      const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if (!markdownView) return;
       
-      // Check if the view is a markdown editor in source mode
-      const isSourceMode = activeLeaf.view.getViewType() === 'markdown' && 
-                           activeLeaf.view.getMode() !== 'preview';
-      
+      // Check if the view is in source mode
+      const isSourceMode = markdownView.getMode() !== 'preview';
       if (!isSourceMode) return;
       
-      // Get the editor element
-      const editor = activeLeaf.view.editor;
+      // Get the editor using the markdownView
+      const editor = markdownView.editor;
       if (!editor) return;
-      
-      // Check if target is in the editor
-      const editorEl = editor.editorComponent.editorEl;
-      if (!editorEl.contains(evt.target)) return;
-      
+
       // Process the event
       this.handleEditorHover(evt, editor);
     });
-
-    // Add CSS to the document
-    this.addStyle();
   }
 
 
@@ -286,7 +280,7 @@ class InteractiveRatingsPlugin extends Plugin {
     
     // Use Unicode-aware character counting
     const symbolCount = getUnicodeCharLength(symbols);
-    overlay.dataset.symbolCount = symbolCount;
+    overlay.dataset.symbolCount = symbolCount.toString();
 
     // Add symbols to the overlay - properly iterate over Unicode characters
     const symbolsArray = [...symbols];
