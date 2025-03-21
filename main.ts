@@ -527,6 +527,9 @@ class InteractiveRatingsPlugin extends Plugin {
     
     // Create container for the overlay
     const overlay = document.createElement('div');
+
+    overlay.tabIndex = 0;
+
     overlay.className = 'interactive-ratings-editor-overlay';
     overlay.style.position = 'fixed';
     overlay.style.zIndex = '1000';
@@ -612,10 +615,12 @@ class InteractiveRatingsPlugin extends Plugin {
     // Add to document
     document.body.appendChild(overlay);
     this.ratingsOverlay = overlay;
+    this.ratingsOverlay.focus();
   }
   
   removeRatingsOverlay() {
     if (this.ratingsOverlay && this.ratingsOverlay.parentNode) {
+      this.ratingsOverlay.blur();
       this.ratingsOverlay.parentNode.removeChild(this.ratingsOverlay);
       this.ratingsOverlay = null;
     }
