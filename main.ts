@@ -48,13 +48,13 @@ function generateSymbolsString(rating, symbolCount, full, empty, half, supportsH
 }
 
 // Extract the function to format rating text
-function formatRatingText(format, newRating, symbolCount, denominator, supportsHalf) {
+function formatRatingText(format, newRating, symbolCount, denominator, supportsHalf: boolean) {
   let newNumerator;
   if (format.includes('percent')) {
     newNumerator = Math.round((newRating / symbolCount) * 100);
   } else {
     newNumerator = newRating;
-    if (supportsHalf !== 'true') {
+    if (!supportsHalf) {
       newNumerator = Math.round(newNumerator);
     }
   }
