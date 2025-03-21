@@ -6,6 +6,6 @@
     "author": "peritus",
     "authorUrl": "https://github.com/peritus",
     "description": "Edit symbol ratings in your notes interactively.",
-    "isDesktopOnly": true
+    "isDesktopOnly": false
   }
   
