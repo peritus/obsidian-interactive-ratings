@@ -521,6 +521,11 @@ class InteractiveRatingsPlugin extends Plugin {
   }
 
   createEditorOverlay(editor, line, start, symbols, originalRating, symbolSet, ratingText) {
+    // First, remove all existing overlays
+    document.querySelectorAll('.interactive-ratings-editor-overlay').forEach(el => {
+      el.remove();
+    });
+
     // Get coordinates for the position
     const posCoords = editor.coordsAtPos({line: line, ch: start});
     if (!posCoords) return;
