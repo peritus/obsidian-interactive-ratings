@@ -241,6 +241,9 @@ class InteractiveRatingsPlugin extends Plugin {
     if (hasRatingText === 'true') {
       const format = overlay.dataset.ratingFormat;
       const denominator = parseInt(overlay.dataset.ratingDenominator);
+      if (rating > denominator) {
+        rating = denominator;
+      }
       updatedRatingText = formatRatingText(format, rating, symbolCount, denominator, supportsHalf);
     }
     
