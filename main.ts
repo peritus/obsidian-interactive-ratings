@@ -599,7 +599,6 @@ class InteractiveRatingsPlugin extends Plugin {
       symbolSpan.style.margin = '0';
       symbolSpan.style.height = 'auto';
       symbolSpan.style.display = 'inline-block';
-      symbolSpan.style.width = `${100 / symbolCount}%`; // Make each star take equal width
       
       overlay.appendChild(symbolSpan);
     }
