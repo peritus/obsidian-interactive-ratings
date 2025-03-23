@@ -1,5 +1,8 @@
 import { MarkdownView, Plugin } from 'obsidian';
 
+// Global logging control
+const LOGGING_ENABLED = true;
+
 function getUnicodeCharLength(str) {
   return [...str].length;
 }
@@ -27,6 +30,24 @@ function calculateNewRating(overlay, clientX) {
     newRating = 0;
   }
   
+  if (LOGGING_ENABLED) {
+    console.debug(`[InteractiveRatings] Calculated new rating`, {
+      clientX,
+      containerRect: {
+        left: containerRect.left,
+        width: containerRect.width
+      },
+      symbolCount,
+      symbolWidth,
+      relativeX,
+      hoveredSymbolIndex,
+      positionWithinSymbol,
+      supportsHalf,
+      useHalfSymbol,
+      newRating
+    });
+  }
+  
   return newRating;
 }
 
@@ -44,6 +65,18 @@ function generateSymbolsString(rating, symbolCount, full, empty, half, supportsH
     }
   }
   
+  if (LOGGING_ENABLED) {
+    console.debug(`[InteractiveRatings] Generated symbols string`, {
+      rating,
+      symbolCount,
+      full,
+      empty,
+      half,
+      supportsHalf,
+      newSymbols
+    });
+  };
+  
   return newSymbols;
 }
 
@@ -60,39 +93,37 @@ function formatRatingText(format, newRating, symbolCount, denominator, supportsH
   }
   
   // Format the text based on the original format
+  let formattedText = '';
   switch (format) {
     case 'fraction':
-      return ` ${newNumerator}/${denominator}`;
+      formattedText = ` ${newNumerator}/${denominator}`;
+      break;
     case 'fraction-parentheses':
-      return ` (${newNumerator}/${denominator})`;
+      formattedText = ` (${newNumerator}/${denominator})`;
+      break;
     case 'percent':
-      return ` ${newNumerator}%`;
+      formattedText = ` ${newNumerator}%`;
+      break;
     case 'percent-parentheses':
-      return ` (${newNumerator}%)`;
+      formattedText = ` (${newNumerator}%)`;
+      break;
     default:
-      return '';
+      formattedText = '';
   }
-}
-
-// Extract the function to update the rating in the editor
-function updateRatingInEditor(editor, line, start, newSymbols, updatedRatingText, originalSymbols, hasRatingText, ratingEndPosition) {
-  let startPos = {line: line, ch: start};
-  let endPos;
-
-  if (hasRatingText === 'true') {
-    // Use the stored rating end position
-    endPos = {line: line, ch: parseInt(ratingEndPosition)};
-  } else {
-    // If there's no rating text, just replace the symbols
-    endPos = {line: line, ch: start + getUnicodeCharLength(originalSymbols)};
-  }
-
-  // Replace the entire content
-  editor.replaceRange(
-    newSymbols + updatedRatingText,
-    startPos,
-    endPos
-  );
+  
+  if (LOGGING_ENABLED) {
+    console.debug(`[InteractiveRatings] Formatted rating text`, {
+      format,
+      newRating,
+      symbolCount,
+      denominator,
+      supportsHalf,
+      newNumerator,
+      formattedText
+    });
+  };
+  
+  return formattedText;
 }
 
 // Define symbol patterns as a global constant
@@ -113,7 +144,6 @@ const SYMBOL_PATTERNS = [
   { full: '⬤', empty: '◯', half: null },   // Bold circles
   { full: '⚫', empty: '⚪', half: null },   // Black/white circles
   { full: '█', empty: '░', half: null },    // Block/light shade
-
 ];
 
 class InteractiveRatingsPlugin extends Plugin {
@@ -121,6 +151,10 @@ class InteractiveRatingsPlugin extends Plugin {
   ratingsOverlay: HTMLElement | null;
 
   async onload() {
+    if (LOGGING_ENABLED) {
+      console.info(`[InteractiveRatings] Plugin loading`);
+    }
+    
     // For editing mode, add event listener to the app's workspace
     this.registerDomEvent(document, 'mousemove', (evt) => {
       // Check if we're in editor mode using getActiveViewOfType instead of activeLeaf
@@ -135,12 +169,19 @@ class InteractiveRatingsPlugin extends Plugin {
       const editor = markdownView.editor;
       if (!editor) return;
   
-      // Process the event
       this.handleEditorInteraction(evt, editor, 'mouse');
     });
   
     // Add touch event handlers
     this.registerDomEvent(document, 'touchstart', (evt) => {
+      if (LOGGING_ENABLED) {
+        console.debug(`[InteractiveRatings] Touch start event detected`, {
+          touches: evt.touches.length,
+          clientX: evt.touches[0]?.clientX,
+          clientY: evt.touches[0]?.clientY,
+          target: evt.target
+        });
+      }
 
       const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!markdownView) return;
@@ -157,6 +198,14 @@ class InteractiveRatingsPlugin extends Plugin {
     // Touch move handler to update rating during drag
     this.registerDomEvent(document, 'touchmove', (evt) => {
       if (this.ratingsOverlay) {
+        if (LOGGING_ENABLED) {
+          console.debug(`[InteractiveRatings] Touch move event while overlay exists`, {
+            touches: evt.touches.length,
+            clientX: evt.touches[0]?.clientX,
+            clientY: evt.touches[0]?.clientY
+          });
+        }
+        
         // Prevent scrolling when interacting with ratings
         evt.preventDefault();
         
@@ -169,11 +218,23 @@ class InteractiveRatingsPlugin extends Plugin {
     // Touch end to finalize the selection
     this.registerDomEvent(document, 'touchend', (evt) => {
       if (this.ratingsOverlay) {
+        if (LOGGING_ENABLED) {
+          console.debug(`[InteractiveRatings] Touch end event while overlay exists`);
+        }
+        
         const rating = parseFloat(this.ratingsOverlay.dataset.currentRating);
+        if (LOGGING_ENABLED) {
+          console.info(`[InteractiveRatings] Finalizing rating from touch`, { rating });
+        }
+        
         this.applyRatingUpdate(rating);
         this.removeRatingsOverlay();
       }
     });
+    
+    if (LOGGING_ENABLED) {
+      console.info(`[InteractiveRatings] Plugin loaded successfully`);
+    }
   }
   
   updateRatingInEditor(editor, line, start, newSymbols, updatedRatingText, originalSymbols, hasRatingText, ratingEndPosition) {
@@ -187,6 +248,21 @@ class InteractiveRatingsPlugin extends Plugin {
       // If there's no rating text, just replace the symbols
       endPos = {line: line, ch: start + getUnicodeCharLength(originalSymbols)};
     }
+  
+    if (LOGGING_ENABLED) {
+      console.info(`[InteractiveRatings] Updating document in editor`, {
+        line,
+        start,
+        startPos,
+        endPos,
+        newSymbols,
+        updatedRatingText,
+        originalSymbols,
+        hasRatingText,
+        ratingEndPosition,
+        finalContent: newSymbols + updatedRatingText
+      });
+    };
   
     // Replace the entire content
     editor.replaceRange(
@@ -205,13 +281,34 @@ class InteractiveRatingsPlugin extends Plugin {
     const half = overlay.dataset.half;
     const supportsHalf = overlay.dataset.supportsHalf === 'true';
     
+    if (LOGGING_ENABLED) {
+      console.debug(`[InteractiveRatings] Updating overlay display`, {
+        rating,
+        full,
+        empty,
+        half,
+        supportsHalf,
+        symbolCount: symbols.length
+      });
+    }
+    
     symbols.forEach((symbol, index) => {
+      const oldContent = symbol.textContent;
+      let newContent;
+      
       if (index < Math.floor(rating)) {
-        symbol.textContent = full;
+        newContent = full;
       } else if (supportsHalf && index === Math.floor(rating) && rating % 1 !== 0) {
-        symbol.textContent = half;
+        newContent = half;
       } else {
-        symbol.textContent = empty;
+        newContent = empty;
+      }
+      
+      if (oldContent !== newContent) {
+        if (LOGGING_ENABLED) {
+          console.debug(`[InteractiveRatings] Symbol ${index} changing from ${oldContent} to ${newContent}`);
+        }
+        symbol.textContent = newContent;
       }
     });
   }
@@ -233,6 +330,24 @@ class InteractiveRatingsPlugin extends Plugin {
     const hasRatingText = overlay.dataset.hasRatingText;
     const originalSymbols = overlay.dataset.originalSymbols;
     
+    if (LOGGING_ENABLED) {
+      console.group(`[InteractiveRatings] Applying rating update`);
+    };
+    if (LOGGING_ENABLED) {
+      console.info(`[InteractiveRatings] Rating update details`, {
+        rating,
+        line,
+        start,
+        symbolCount,
+        full,
+        empty,
+        half,
+        supportsHalf,
+        hasRatingText,
+        originalSymbols
+      });
+    };
+    
     // Generate new symbols string
     const newSymbols = generateSymbolsString(rating, symbolCount, full, empty, half, supportsHalf);
     
@@ -243,6 +358,9 @@ class InteractiveRatingsPlugin extends Plugin {
       const denominator = parseInt(overlay.dataset.ratingDenominator);
       if (rating > denominator) {
         rating = denominator;
+        if (LOGGING_ENABLED) {
+          console.debug(`[InteractiveRatings] Rating capped to denominator`, { rating, denominator });
+        };
       }
       updatedRatingText = formatRatingText(format, rating, symbolCount, denominator, supportsHalf);
     }
@@ -258,11 +376,18 @@ class InteractiveRatingsPlugin extends Plugin {
       hasRatingText, 
       overlay.dataset.ratingEndPosition
     );
+    
+    if (LOGGING_ENABLED) {
+      console.groupEnd();
+    }
   }
 
   handleEditorInteraction(event, editor, eventType) {
     // Clear any existing overlay if not interacting with it
     if (this.ratingsOverlay && !this.isInteractingWithElement(event, this.ratingsOverlay, eventType)) {
+      if (LOGGING_ENABLED) {
+        console.debug(`[InteractiveRatings] Removing overlay as interaction moved away`);
+      }
       this.removeRatingsOverlay();
     }
     
@@ -321,12 +446,31 @@ class InteractiveRatingsPlugin extends Plugin {
         if (this.isInteractionWithinRegion(event, startCoords, endCoords, eventType)) {
           // Determine pattern type by checking characters
           const pattern = match[0];
+          
+          if (LOGGING_ENABLED) {
+            console.debug(`[InteractiveRatings] Detected rating pattern`, {
+              pattern,
+              line: editorPos.line,
+              start,
+              end,
+              ratingText: ratingText ? JSON.stringify(ratingText) : 'none'
+            });
+          };
+          
           const symbolSet = this.getSymbolSetForPattern(pattern);
           
           if (!symbolSet) continue;
           
           // Calculate original rating (count full symbols as 1.0 and half symbols as 0.5)
           const originalRating = this.calculateRating(pattern, symbolSet);
+          
+          if (LOGGING_ENABLED) {
+            console.info(`[InteractiveRatings] Detected original rating`, {
+              originalRating,
+              pattern,
+              symbolSet: JSON.stringify(symbolSet)
+            });
+          }
           
           // Create overlay if it doesn't exist or is for a different pattern
           if (!this.ratingsOverlay || this.ratingsOverlay.dataset.linePosition !== `${editorPos.line}-${start}`) {
@@ -344,12 +488,28 @@ class InteractiveRatingsPlugin extends Plugin {
     const clientX = eventType === 'mouse' ? event.clientX : event.touches[0].clientX;
     const clientY = eventType === 'mouse' ? event.clientY : event.touches[0].clientY;
     
-    return (
+    const isInteracting = (
       clientX >= rect.left &&
       clientX <= rect.right &&
       clientY >= rect.top &&
       clientY <= rect.bottom
     );
+    
+    if (LOGGING_ENABLED) {
+      console.debug(`[InteractiveRatings] Checking interaction with element (${eventType})`, {
+        clientX,
+        clientY,
+        rect: {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom
+        },
+        isInteracting
+      });
+    };
+    
+    return isInteracting;
   }
   
   isInteractionWithinRegion(event, startCoords, endCoords, eventType) {
@@ -359,12 +519,14 @@ class InteractiveRatingsPlugin extends Plugin {
     const clientX = eventType === 'mouse' ? event.clientX : event.touches[0].clientX;
     const clientY = eventType === 'mouse' ? event.clientY : event.touches[0].clientY;
     
-    return (
+    const isWithin = (
       clientX >= startCoords.left - buffer &&
       clientX <= endCoords.right + buffer &&
       clientY >= startCoords.top - buffer &&
       clientY <= endCoords.bottom + buffer
     );
+    
+    return isWithin;
   }
 
   parseRatingText(line, start, end) {
@@ -399,22 +561,26 @@ class InteractiveRatingsPlugin extends Plugin {
       // Calculate the end position correctly with Unicode-aware calculations
       const endPosition = end + ratingTextMatch[0].length;
   
-      return {
+      const result = {
         format,
         numerator,
         denominator,
         text: ratingTextMatch[0],
         endPosition: endPosition
       };
+      
+      return result;
     }
   
     return null;
   }
-  
 
   handleEditorHover(event, editor) {
     // Clear any existing overlay
     if (this.ratingsOverlay && !this.isMouseOverElement(event, this.ratingsOverlay)) {
+      if (LOGGING_ENABLED) {
+        console.debug(`[InteractiveRatings] Removing overlay on mouse leave`);
+      }
       this.removeRatingsOverlay();
     }
     
@@ -466,6 +632,14 @@ class InteractiveRatingsPlugin extends Plugin {
           // Calculate original rating (count full symbols as 1.0 and half symbols as 0.5)
           const originalRating = this.calculateRating(pattern, symbolSet);
           
+          if (LOGGING_ENABLED) {
+            console.info(`[InteractiveRatings] Detected original rating on hover`, {
+              originalRating,
+              pattern,
+              symbolSet: JSON.stringify(symbolSet)
+            });
+          };
+          
           // Create overlay if it doesn't exist or is for a different pattern
           if (!this.ratingsOverlay || this.ratingsOverlay.dataset.linePosition !== `${editorPos.line}-${start}`) {
             this.createEditorOverlay(editor, editorPos.line, start, pattern, originalRating, symbolSet, ratingText);
@@ -495,6 +669,17 @@ class InteractiveRatingsPlugin extends Plugin {
       if (char === symbolSet.full) rating += 1.0;
       else if (symbolSet.half && char === symbolSet.half) rating += 0.5;
     }
+    
+    if (LOGGING_ENABLED) {
+      console.debug(`[InteractiveRatings] Calculated pattern rating`, {
+        pattern,
+        full: symbolSet.full,
+        empty: symbolSet.empty,
+        half: symbolSet.half,
+        rating
+      });
+    };
+    
     return rating;
   }
 
@@ -502,39 +687,77 @@ class InteractiveRatingsPlugin extends Plugin {
     // Add a small buffer to make clicking easier
     const buffer = 2;
     
-    return (
+    const isWithin = (
       event.clientX >= startCoords.left - buffer &&
       event.clientX <= endCoords.right + buffer &&
       event.clientY >= startCoords.top - buffer &&
       event.clientY <= endCoords.bottom + buffer
     );
+    
+    return isWithin;
   }
   
   isMouseOverElement(event, element) {
     const rect = element.getBoundingClientRect();
-    return (
+    const isOver = (
       event.clientX >= rect.left &&
       event.clientX <= rect.right &&
       event.clientY >= rect.top &&
       event.clientY <= rect.bottom
     );
+    
+    if (LOGGING_ENABLED) {
+      console.debug(`[InteractiveRatings] Checking if mouse is over element`, {
+        mouseX: event.clientX,
+        mouseY: event.clientY,
+        rect: {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom
+        },
+        isOver
+      });
+    };
+    
+    return isOver;
   }
 
   createEditorOverlay(editor, line, start, symbols, originalRating, symbolSet, ratingText) {
+    if (LOGGING_ENABLED) {
+      console.group(`[InteractiveRatings] Creating editor overlay`);
+    };
+    if (LOGGING_ENABLED) {
+      console.info(`[InteractiveRatings] Creating editor overlay`, {
+        line,
+        start,
+        symbols,
+        originalRating,
+        symbolSet,
+        ratingText: ratingText ? JSON.stringify(ratingText) : 'none'
+      });
+    };
+  
     // First, remove all existing overlays
     document.querySelectorAll('.interactive-ratings-editor-overlay').forEach(el => {
       el.remove();
     });
-
+  
     // Get coordinates for the position
     const posCoords = editor.coordsAtPos({line: line, ch: start});
-    if (!posCoords) return;
+    if (!posCoords) {
+      if (LOGGING_ENABLED) {
+        console.warn(`[InteractiveRatings] Could not get coordinates for position`, { line, start });
+        console.groupEnd();
+      };
+      return;
+    }
     
     // Create container for the overlay
     const overlay = document.createElement('div');
-
+  
     overlay.tabIndex = 0;
-
+  
     overlay.className = 'interactive-ratings-editor-overlay';
     overlay.style.position = 'fixed';
     overlay.style.zIndex = '1000';
@@ -597,6 +820,14 @@ class InteractiveRatingsPlugin extends Plugin {
     const symbolCount = getUnicodeCharLength(symbols);
     overlay.dataset.symbolCount = symbolCount.toString();
   
+    if (LOGGING_ENABLED) {
+      console.debug(`[InteractiveRatings] Constructed overlay element`, {
+        position: `${posCoords.left}px, ${posCoords.top - verticalAdjustment}px`,
+        symbolCount,
+        datasets: {...overlay.dataset}
+      });
+    }
+  
     // Add symbols to the overlay - properly iterate over Unicode characters
     const symbolsArray = [...symbols];
     for (let i = 0; i < symbolCount; i++) {
@@ -621,17 +852,52 @@ class InteractiveRatingsPlugin extends Plugin {
     document.body.appendChild(overlay);
     this.ratingsOverlay = overlay;
     this.ratingsOverlay.focus();
+    
+    if (LOGGING_ENABLED) {
+      console.info(`[InteractiveRatings] Editor overlay created successfully`);
+      console.groupEnd();
+    }
   }
   
   removeRatingsOverlay() {
-    if (this.ratingsOverlay && this.ratingsOverlay.parentNode) {
-      this.ratingsOverlay.blur();
-      this.ratingsOverlay.parentNode.removeChild(this.ratingsOverlay);
-      this.ratingsOverlay = null;
+    if (LOGGING_ENABLED) {
+      console.group(`[InteractiveRatings] Removing ratings overlay`);
+    }
+    
+    if (this.ratingsOverlay) {
+      if (this.ratingsOverlay.parentNode) {
+        if (LOGGING_ENABLED) {
+          console.info(`[InteractiveRatings] Removing ratings overlay from DOM`, {
+            linePosition: this.ratingsOverlay.dataset.linePosition,
+            currentRating: this.ratingsOverlay.dataset.currentRating
+          });
+        }
+        
+        this.ratingsOverlay.blur();
+        this.ratingsOverlay.parentNode.removeChild(this.ratingsOverlay);
+        this.ratingsOverlay = null;
+      } else {
+        console.warn("Ratings overlay exists but is not in DOM");
+      }
+    } else {
+      console.debug("No ratings overlay to remove");
+    }
+    
+    if (LOGGING_ENABLED) {
+      console.groupEnd();
     }
   }
 
   addInteractionListeners(container) {
+    if (LOGGING_ENABLED) {
+      console.group(`[InteractiveRatings] Adding interaction listeners`);
+      console.info("Adding interaction listeners to overlay", {
+        linePosition: container.dataset.linePosition,
+        symbolCount: container.dataset.symbolCount,
+        supportsHalf: container.dataset.supportsHalf
+      });
+    }
+    
     const symbols = container.querySelectorAll('.interactive-ratings-symbol');
     const full = container.dataset.full;
     const empty = container.dataset.empty;
@@ -640,12 +906,23 @@ class InteractiveRatingsPlugin extends Plugin {
     
     // Mouse move handler
     container.addEventListener('mousemove', (e) => {
+      if (LOGGING_ENABLED) {
+        console.debug(`[InteractiveRatings] Mouse move event on overlay`, {
+          clientX: e.clientX,
+          clientY: e.clientY
+        });
+      }
+      
       const rating = calculateNewRating(container, e.clientX);
       this.updateOverlayDisplay(container, rating);
     });
     
     // Reset on mouse leave
     container.addEventListener('mouseleave', () => {
+      if (LOGGING_ENABLED) {
+        console.debug(`[InteractiveRatings] Mouse leave event on overlay`);
+      }
+      
       // Reset to original state
       symbols.forEach((symbol) => {
         const originalChar = symbol.dataset.originalChar || empty;
@@ -655,10 +932,26 @@ class InteractiveRatingsPlugin extends Plugin {
     
     // Click handler for mouse
     container.addEventListener('click', (e) => {
+      if (LOGGING_ENABLED) {
+        console.info(`[InteractiveRatings] Click event on overlay`, {
+          clientX: e.clientX,
+          clientY: e.clientY
+        });
+      };
+      
       const rating = calculateNewRating(container, e.clientX);
+      if (LOGGING_ENABLED) {
+        console.debug(`[InteractiveRatings] Rating on click`, { rating });
+      }
+      
       this.applyRatingUpdate(rating);
       this.removeRatingsOverlay();
     });
+    
+    if (LOGGING_ENABLED) {
+      console.info("Interaction listeners added successfully");
+      console.groupEnd();
+    }
   }
 
   onunload() {
