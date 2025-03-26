@@ -4,9 +4,8 @@
   "description": "Edit symbol ratings in your Obsidian notes interactively.",
   "main": "main.js",
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "start": "node main.js",
+    "build": "node esbuild.config.js",
+    "build:watch": "node esbuild.config.js --watch",
     "type-check": "tsc --noEmit"
   },
   "keywords": [
@@ -15,8 +14,8 @@
   "author": "peritus",
   "license": "MIT",
   "devDependencies": {
-    "obsidian": "^1.8.7",
-    "ts-node": "^10.9.2",
+    "esbuild": "^0.25.1",
+    "obsidian": "^1.8.7", 
     "typescript": "^5.8.2"
   }
 }

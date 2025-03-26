@@ -1,8 +1,8 @@
-import { Plugin, MarkdownView } from 'obsidian';
-import { LOGGING_ENABLED, calculateNewRating, getUnicodeCharLength, generateSymbolsString, formatRatingText, SYMBOL_PATTERNS, getUnicodeSubstring } from './main';
+import { Plugin, MarkdownView, App } from 'obsidian';
+import { LOGGING_ENABLED, calculateNewRating, getUnicodeCharLength, generateSymbolsString, formatRatingText, SYMBOL_PATTERNS, getUnicodeSubstring } from './utils';
 
 export class InteractiveRatingsPlugin extends Plugin {
-
+  app: App;
   ratingsOverlay: HTMLElement | null;
 
   async onload() {
