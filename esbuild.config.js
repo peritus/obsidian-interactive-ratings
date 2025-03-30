@@ -13,7 +13,7 @@ const isWatch = process.argv.includes('--watch');
 
 // Build configuration
 const buildOptions = {
-  entryPoints: ['main.ts'],
+  entryPoints: ['src/main.ts'],
   bundle: true,
   outfile: 'main.js',
   platform: 'browser',
@@ -22,7 +22,7 @@ const buildOptions = {
   banner: { js: banner },
   external: ['obsidian'],
   logLevel: 'info',
-  minify: process.env.NODE_ENV === 'production',
+  minify: false,
   treeShaking: true,
 };
 
@@ -31,13 +31,8 @@ function copyFiles() {
   // This would copy files if needed, but in this case manifest.json is already in the root
   console.log('Copying additional files...');
   
-  // Copy styles.css if it exists
-  try {
-    fs.copyFileSync('styles.css', 'styles.css');
-    console.log('Copied styles.css');
-  } catch (err) {
-    // If it doesn't exist, that's fine
-  }
+  fs.copyFileSync('styles.css', 'styles.css');
+  console.log('Copied styles.css');
 }
 
 async function build() {
