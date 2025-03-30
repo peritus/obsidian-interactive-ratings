@@ -1,15 +1,22 @@
-// Global logging control
-export const LOGGING_ENABLED = true;
+import { LOGGING_ENABLED } from './constants';
 
+/**
+ * Get the length of a string in Unicode characters
+ */
 export function getUnicodeCharLength(str: string): number {
   return [...str].length;
 }
 
+/**
+ * Get a substring with proper Unicode character handling
+ */
 export function getUnicodeSubstring(str: string, start: number, end: number): string {
   return [...str].slice(start, end).join('');
 }
 
-// Extract rating calculation from the click handler
+/**
+ * Calculate the new rating based on cursor position
+ */
 export function calculateNewRating(overlay: HTMLElement, clientX: number): number {
   const containerRect = overlay.getBoundingClientRect();
   const symbolCount = parseInt(overlay.dataset.symbolCount);
@@ -49,8 +56,17 @@ export function calculateNewRating(overlay: HTMLElement, clientX: number): numbe
   return newRating;
 }
 
-// Extract the function to generate new symbol string
-export function generateSymbolsString(rating, symbolCount, full, empty, half, supportsHalf) {
+/**
+ * Generate a string of rating symbols
+ */
+export function generateSymbolsString(
+  rating: number, 
+  symbolCount: number, 
+  full: string, 
+  empty: string, 
+  half: string, 
+  supportsHalf: boolean
+): string {
   let newSymbols = '';
 
   for (let i = 0; i < symbolCount; i++) {
@@ -78,8 +94,16 @@ export function generateSymbolsString(rating, symbolCount, full, empty, half, su
   return newSymbols;
 }
 
-// Extract the function to format rating text
-export function formatRatingText(format, newRating, symbolCount, denominator, supportsHalf: boolean) {
+/**
+ * Format the rating text based on the specified format
+ */
+export function formatRatingText(
+  format: string, 
+  newRating: number, 
+  symbolCount: number, 
+  denominator: number, 
+  supportsHalf: boolean
+): string {
   let newNumerator;
   if (format.includes('percent')) {
     newNumerator = Math.round((newRating / symbolCount) * 100);
@@ -123,23 +147,3 @@ export function formatRatingText(format, newRating, symbolCount, denominator, su
 
   return formattedText;
 }
-
-// Define symbol patterns as a global constant
-export const SYMBOL_PATTERNS = [
-  { full: '★', empty: '☆', half: null },    // Symbols
-  { full: '●', empty: '○', half: '◐' },     // Circles
-  { full: '■', empty: '□', half: '◧' },     // Squares
-  { full: '▲', empty: '△', half: null },    // Triangles (no half)
-
-  // Progress bar patterns
-  { full: '█', empty: '▁', half: null  },   // Block progress
-  { full: '⣿', empty: '⣀', half: '⡇' },     // Braille dots
-  { full: '⬤', empty: '○', half: null },   // Solid/empty circles
-  { full: '■', empty: '□', half: null },    // Solid/empty squares
-  { full: '▰', empty: '▱', half: null },    // Dotted squares
-  { full: '◼', empty: '▭', half: null },    // Filled/empty rectangles
-  { full: '▮', empty: '▯', half: null },    // Vertical bars
-  { full: '⬤', empty: '◯', half: null },   // Bold circles
-  { full: '⚫', empty: '⚪', half: null },   // Black/white circles
-  { full: '█', empty: '░', half: null },    // Block/light shade
-];
