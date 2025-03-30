@@ -1,8 +1,8 @@
 import { App, MarkdownView, Plugin } from 'obsidian';
 import { LOGGING_ENABLED } from './constants';
-import { handleEditorInteraction, handleTouchEnd, handleTouchMove, isInSourceMode } from './event-handlers';
+import { handleEditorInteraction, handlePointerMove, handlePointerUp, isInSourceMode } from './event-handlers';
 import { calculateNewRating } from './utils';
-import { adaptMouseEvent, adaptTouchEvent, ExtendedEditor } from './types';
+import { adaptEvent, ExtendedEditor } from './types';
 import { addInteractionListeners, applyRatingUpdate, createEditorOverlay, removeRatingsOverlay, updateOverlayDisplay } from './ratings-overlay';
 
 export class InteractiveRatingsPlugin extends Plugin {
@@ -14,39 +14,57 @@ export class InteractiveRatingsPlugin extends Plugin {
       console.info(`[InteractiveRatings] Plugin loading`);
     }
 
-    // For editing mode, add event listener to the app's workspace
-    this.registerDomEvent(document, 'mousemove', (evt: MouseEvent) => {
+    // Use pointer events for all interactions
+    this.registerDomEvent(document, 'pointermove', (evt: PointerEvent) => {
       const { isSourceMode, editor } = isInSourceMode(this.app);
-      if (!isSourceMode || !editor) return;
-
-      this.handleMouseMove(evt, editor);
-    });
-
-    // Add touch event handlers
-    this.registerDomEvent(document, 'touchstart', (evt: TouchEvent) => {
-      if (LOGGING_ENABLED) {
-        console.debug(`[InteractiveRatings] Touch start event detected`, {
-          touches: evt.touches.length,
-          clientX: evt.touches[0]?.clientX,
-          clientY: evt.touches[0]?.clientY,
-          target: evt.target
-        });
+      
+      // First handle potential rating detection
+      if (isSourceMode && editor) {
+        this.handleInteraction(evt, editor);
       }
+      
+      // Then handle overlay movement if it exists
+      handlePointerMove(evt, this.ratingsOverlay, this.updateOverlayDisplay.bind(this));
+    });
 
+    // Add pointer down for initial detection and pointer capture
+    this.registerDomEvent(document, 'pointerdown', (evt: PointerEvent) => {
       const { isSourceMode, editor } = isInSourceMode(this.app);
-      if (!isSourceMode || !editor) return;
-
-      this.handleTouchStart(evt, editor);
+      if (isSourceMode && editor) {
+        this.handleInteraction(evt, editor);
+      }
+      
+      // If we have an overlay and the event is within it, capture the pointer
+      if (this.ratingsOverlay && evt.target instanceof HTMLElement) {
+        const rect = this.ratingsOverlay.getBoundingClientRect();
+        if (
+          evt.clientX >= rect.left && 
+          evt.clientX <= rect.right && 
+          evt.clientY >= rect.top && 
+          evt.clientY <= rect.bottom
+        ) {
+          try {
+            this.ratingsOverlay.setPointerCapture(evt.pointerId);
+          } catch (e) {
+            // Ignore errors with pointer capture
+          }
+        }
+      }
     });
 
-    // Touch move handler to update rating during drag
-    this.registerDomEvent(document, 'touchmove', (evt: TouchEvent) => {
-      handleTouchMove(evt, this.ratingsOverlay, this.updateOverlayDisplay.bind(this));
+    // Pointer up to finalize the selection
+    this.registerDomEvent(document, 'pointerup', (evt: PointerEvent) => {
+      handlePointerUp(
+        evt, 
+        this.ratingsOverlay, 
+        this.applyRatingUpdate.bind(this), 
+        this.removeRatingsOverlay.bind(this)
+      );
     });
 
-    // Touch end to finalize the selection
-    this.registerDomEvent(document, 'touchend', (evt: TouchEvent) => {
-      handleTouchEnd(evt, this.ratingsOverlay, this.applyRatingUpdate.bind(this), this.removeRatingsOverlay.bind(this));
+    // Also handle pointer cancel to clean up
+    this.registerDomEvent(document, 'pointercancel', (evt: PointerEvent) => {
+      this.removeRatingsOverlay();
     });
 
     if (LOGGING_ENABLED) {
@@ -55,27 +73,12 @@ export class InteractiveRatingsPlugin extends Plugin {
   }
 
   /**
-   * Handle mouse movement to detect rating patterns
+   * Unified handler for all interactions to detect rating patterns
    */
-  handleMouseMove(event: MouseEvent, editor: ExtendedEditor): void {
+  handleInteraction(event: PointerEvent, editor: ExtendedEditor): void {
     handleEditorInteraction(
-      adaptMouseEvent(event),
+      adaptEvent(event),
       editor,
-      'mouse',
-      this.ratingsOverlay,
-      this.removeRatingsOverlay.bind(this),
-      this.createEditorOverlay.bind(this)
-    );
-  }
-
-  /**
-   * Handle touch start event to detect rating patterns
-   */
-  handleTouchStart(event: TouchEvent, editor: ExtendedEditor): void {
-    handleEditorInteraction(
-      adaptTouchEvent(event),
-      editor,
-      'touch',
       this.ratingsOverlay,
       this.removeRatingsOverlay.bind(this),
       this.createEditorOverlay.bind(this)

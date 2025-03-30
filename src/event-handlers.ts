@@ -2,30 +2,29 @@ import { Editor, MarkdownView } from 'obsidian';
 import { LOGGING_ENABLED } from './constants';
 import { isInteractionWithinRegion, isInteractingWithElement } from './ratings-calculator';
 import { calculateRating, generateSymbolRegexPatterns, getSymbolSetForPattern, parseRatingText } from './ratings-parser';
-import { EditorInteractionEvent, ExtendedEditor, InteractionType, RatingText } from './types';
+import { EditorInteractionEvent, ExtendedEditor, RatingText } from './types';
 import { calculateNewRating, getUnicodeCharLength } from './utils';
 
 /**
- * Handle editor interactions (mouse or touch) to detect and process rating patterns
+ * Handle editor interactions to detect and process rating patterns
  */
 export function handleEditorInteraction(
   event: EditorInteractionEvent,
   editor: ExtendedEditor,
-  eventType: InteractionType,
   ratingsOverlay: HTMLElement | null,
-  removeRatingsOverlayFn: () => void, 
+  removeRatingsOverlayFn: () => void,
   createEditorOverlayFn: (
-    editor: ExtendedEditor, 
-    line: number, 
-    start: number, 
-    symbols: string, 
-    originalRating: number, 
-    symbolSet: any, 
+    editor: ExtendedEditor,
+    line: number,
+    start: number,
+    symbols: string,
+    originalRating: number,
+    symbolSet: any,
     ratingText: RatingText | null
   ) => void
 ): void {
   // Clear any existing overlay if not interacting with it
-  if (ratingsOverlay && !isInteractingWithElement(event, ratingsOverlay, eventType)) {
+  if (ratingsOverlay && !isInteractingWithElement(event, ratingsOverlay)) {
     if (LOGGING_ENABLED) {
       console.debug(`[InteractiveRatings] Removing overlay as interaction moved away`);
     }
@@ -35,14 +34,8 @@ export function handleEditorInteraction(
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
 
-  // Get editor position - works differently for mouse vs touch
-  const editorPos = eventType === 'mouse'
-    ? editor.posAtMouse(event as MouseEvent)
-    : editor.posAtCoords({
-      left: eventType === 'touch' ? event.touches[0].clientX : event.clientX,
-      top: eventType === 'touch' ? event.touches[0].clientY : event.clientY
-    });
-
+  // Get editor position using the original event
+  const editorPos = editor.posAtMouse(event.originalEvent);
   if (!editorPos) return;
 
   // Get the line at the current position
@@ -73,7 +66,7 @@ export function handleEditorInteraction(
       if (!startCoords || !endCoords) continue;
 
       // Check if interaction is inside the region
-      if (isInteractionWithinRegion(event, startCoords, endCoords, eventType)) {
+      if (isInteractionWithinRegion(event, startCoords, endCoords)) {
         // Determine pattern type by checking characters
         const pattern = match[0];
 
@@ -114,56 +107,64 @@ export function handleEditorInteraction(
 }
 
 /**
- * Handle touch move event for rating overlays
+ * Handle pointer move event for rating overlays
  */
-export function handleTouchMove(
-  event: TouchEvent, 
+export function handlePointerMove(
+  event: PointerEvent,
   ratingsOverlay: HTMLElement | null,
   updateOverlayDisplayFn: (overlay: HTMLElement, rating: number) => void
 ): void {
   if (ratingsOverlay) {
     if (LOGGING_ENABLED) {
-      console.debug(`[InteractiveRatings] Touch move event while overlay exists`, {
-        touches: event.touches.length,
-        clientX: event.touches[0]?.clientX,
-        clientY: event.touches[0]?.clientY
+      console.debug(`[InteractiveRatings] Pointer move event while overlay exists`, {
+        pointerType: event.pointerType,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        pointerId: event.pointerId
       });
     }
 
-    // Prevent scrolling when interacting with ratings
-    event.preventDefault();
-
-    const clientX = event.touches[0].clientX;
-    const rating = calculateNewRating(ratingsOverlay, clientX);
+    const rating = calculateNewRating(ratingsOverlay, event.clientX);
     updateOverlayDisplayFn(ratingsOverlay, rating);
   }
 }
 
 /**
- * Handle touch end event for rating overlays
+ * Handle pointer up event for rating overlays
  */
-export function handleTouchEnd(
-  event: TouchEvent, 
+export function handlePointerUp(
+  event: PointerEvent,
   ratingsOverlay: HTMLElement | null,
   applyRatingUpdateFn: (rating: number) => void,
   removeRatingsOverlayFn: () => void
 ): void {
   if (ratingsOverlay) {
     if (LOGGING_ENABLED) {
-      console.debug(`[InteractiveRatings] Touch end event while overlay exists`);
+      console.debug(`[InteractiveRatings] Pointer up event while overlay exists`, {
+        pointerType: event.pointerType,
+        pointerId: event.pointerId
+      });
     }
 
     const rating = parseFloat(ratingsOverlay.dataset.currentRating);
     if (LOGGING_ENABLED) {
-      console.info(`[InteractiveRatings] Finalizing rating from touch`, { rating });
+      console.info(`[InteractiveRatings] Finalizing rating`, { rating });
     }
 
     applyRatingUpdateFn(rating);
     removeRatingsOverlayFn();
+    
+    // Release pointer capture if it was captured
+    try {
+      const element = event.target as HTMLElement;
+      if (element && element.hasPointerCapture(event.pointerId)) {
+        element.releasePointerCapture(event.pointerId);
+      }
+    } catch (e) {
+      // Ignore errors with pointer capture
+    }
   }
 }
-
-// calculateNewRating imported from utils.ts
 
 /**
  * Check if we are in source mode in an editor view

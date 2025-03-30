@@ -372,12 +372,14 @@ export function addInteractionListeners(
   const half = container.dataset.half;
   const supportsHalf = container.dataset.supportsHalf === 'true';
 
-  // Mouse move handler
-  container.addEventListener('mousemove', (e) => {
+  // Use pointer events for all interactions
+  container.addEventListener('pointermove', (e) => {
     if (LOGGING_ENABLED) {
-      console.debug(`[InteractiveRatings] Mouse move event on overlay`, {
+      console.debug(`[InteractiveRatings] Pointer move event on overlay`, {
+        pointerType: e.pointerType,
         clientX: e.clientX,
-        clientY: e.clientY
+        clientY: e.clientY,
+        pointerId: e.pointerId
       });
     }
 
@@ -385,10 +387,10 @@ export function addInteractionListeners(
     updateOverlayDisplay(container, rating);
   });
 
-  // Reset on mouse leave
-  container.addEventListener('mouseleave', () => {
+  // Reset on pointer leave
+  container.addEventListener('pointerleave', () => {
     if (LOGGING_ENABLED) {
-      console.debug(`[InteractiveRatings] Mouse leave event on overlay`);
+      console.debug(`[InteractiveRatings] Pointer leave event on overlay`);
     }
 
     // Reset to original state
@@ -398,22 +400,50 @@ export function addInteractionListeners(
     });
   });
 
-  // Click handler for mouse
-  container.addEventListener('click', (e) => {
+  // Pointer down to capture the pointer
+  container.addEventListener('pointerdown', (e) => {
     if (LOGGING_ENABLED) {
-      console.info(`[InteractiveRatings] Click event on overlay`, {
-        clientX: e.clientX,
-        clientY: e.clientY
+      console.debug(`[InteractiveRatings] Pointer down event on overlay`, {
+        pointerType: e.pointerType,
+        pointerId: e.pointerId
       });
-    };
+    }
+
+    // Capture pointer to ensure we get all events even if finger moves outside the element
+    try {
+      container.setPointerCapture(e.pointerId);
+    } catch (e) {
+      // Ignore errors with pointer capture
+    }
+  });
+
+  // Pointer up to finalize the selection
+  container.addEventListener('pointerup', (e) => {
+    if (LOGGING_ENABLED) {
+      console.info(`[InteractiveRatings] Pointer up event on overlay`, {
+        pointerType: e.pointerType,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        pointerId: e.pointerId
+      });
+    }
 
     const rating = calculateNewRating(container, e.clientX);
     if (LOGGING_ENABLED) {
-      console.debug(`[InteractiveRatings] Rating on click`, { rating });
+      console.debug(`[InteractiveRatings] Rating on pointer up`, { rating });
     }
 
     applyRatingFn(rating);
     removeOverlayFn();
+
+    // Release pointer capture
+    try {
+      if (container.hasPointerCapture(e.pointerId)) {
+        container.releasePointerCapture(e.pointerId);
+      }
+    } catch (e) {
+      // Ignore errors with pointer capture
+    }
   });
 
   if (LOGGING_ENABLED) {

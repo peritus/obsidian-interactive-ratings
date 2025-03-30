@@ -1,17 +1,15 @@
 import { LOGGING_ENABLED } from './constants';
-import { Coordinates, EditorInteractionEvent, InteractionType } from './types';
+import { Coordinates, EditorInteractionEvent } from './types';
 
 /**
  * Check if an event is interacting with a specific DOM element
  */
 export function isInteractingWithElement(
-  event: EditorInteractionEvent, 
-  element: HTMLElement, 
-  eventType: InteractionType
+  event: EditorInteractionEvent,
+  element: HTMLElement
 ): boolean {
   const rect = element.getBoundingClientRect();
-  const clientX = eventType === 'mouse' ? event.clientX : event.touches[0].clientX;
-  const clientY = eventType === 'mouse' ? event.clientY : event.touches[0].clientY;
+  const { clientX, clientY, pointerType } = event;
 
   const isInteracting = (
     clientX >= rect.left &&
@@ -21,7 +19,7 @@ export function isInteractingWithElement(
   );
 
   if (LOGGING_ENABLED) {
-    console.debug(`[InteractiveRatings] Checking interaction with element (${eventType})`, {
+    console.debug(`[InteractiveRatings] Checking interaction with element (${pointerType || 'pointer'})`, {
       clientX,
       clientY,
       rect: {
@@ -41,68 +39,18 @@ export function isInteractingWithElement(
  * Check if an interaction event is within a specific region defined by coordinates
  */
 export function isInteractionWithinRegion(
-  event: EditorInteractionEvent, 
-  startCoords: Coordinates, 
-  endCoords: Coordinates, 
-  eventType: InteractionType,
+  event: EditorInteractionEvent,
+  startCoords: Coordinates,
+  endCoords: Coordinates,
   buffer: number = 5
 ): boolean {
-  const clientX = eventType === 'mouse' ? event.clientX : event.touches[0].clientX;
-  const clientY = eventType === 'mouse' ? event.clientY : event.touches[0].clientY;
+  const { clientX, clientY } = event;
 
   const isWithin = (
     clientX >= startCoords.left - buffer &&
     clientX <= endCoords.right + buffer &&
     clientY >= startCoords.top - buffer &&
     clientY <= endCoords.bottom + buffer
-  );
-
-  return isWithin;
-}
-
-/**
- * Check if mouse is over an element (simplified version of isInteractingWithElement for mouse)
- */
-export function isMouseOverElement(event: MouseEvent, element: HTMLElement): boolean {
-  const rect = element.getBoundingClientRect();
-  const isOver = (
-    event.clientX >= rect.left &&
-    event.clientX <= rect.right &&
-    event.clientY >= rect.top &&
-    event.clientY <= rect.bottom
-  );
-
-  if (LOGGING_ENABLED) {
-    console.debug(`[InteractiveRatings] Checking if mouse is over element`, {
-      mouseX: event.clientX,
-      mouseY: event.clientY,
-      rect: {
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom
-      },
-      isOver
-    });
-  };
-
-  return isOver;
-}
-
-/**
- * Check if mouse is within a region (simplified version for mouse events)
- */
-export function isMouseWithinRegion(
-  event: MouseEvent, 
-  startCoords: Coordinates, 
-  endCoords: Coordinates,
-  buffer: number = 2
-): boolean {
-  const isWithin = (
-    event.clientX >= startCoords.left - buffer &&
-    event.clientX <= endCoords.right + buffer &&
-    event.clientY >= startCoords.top - buffer &&
-    event.clientY <= endCoords.bottom + buffer
   );
 
   return isWithin;

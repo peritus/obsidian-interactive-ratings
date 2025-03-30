@@ -42,23 +42,19 @@ export interface EditorInteractionEvent {
     clientX: number;
     clientY: number;
     target: EventTarget | null;
-    touches?: TouchList;
+    originalEvent: PointerEvent;
+    pointerId?: number;
+    pointerType?: string;
 }
 
-// Convert standard events to EditorInteractionEvent
-export function adaptTouchEvent(event: TouchEvent): EditorInteractionEvent {
-    return {
-        clientX: event.touches[0]?.clientX || 0,
-        clientY: event.touches[0]?.clientY || 0,
-        target: event.target,
-        touches: event.touches
-    };
-}
-
-export function adaptMouseEvent(event: MouseEvent): EditorInteractionEvent {
+// Simplified adapter for pointer events
+export function adaptEvent(event: PointerEvent): EditorInteractionEvent {
     return {
         clientX: event.clientX,
         clientY: event.clientY,
-        target: event.target
+        target: event.target,
+        originalEvent: event,
+        pointerId: event.pointerId,
+        pointerType: event.pointerType
     };
 }
