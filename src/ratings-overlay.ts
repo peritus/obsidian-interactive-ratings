@@ -374,6 +374,8 @@ export function addInteractionListeners(
 
   // Use pointer events for all interactions
   container.addEventListener('pointermove', (e) => {
+    e.preventDefault(); // Prevent default behavior
+    
     if (LOGGING_ENABLED) {
       console.debug(`[InteractiveRatings] Pointer move event on overlay`, {
         pointerType: e.pointerType,
@@ -402,6 +404,8 @@ export function addInteractionListeners(
 
   // Pointer down to capture the pointer
   container.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); // Prevent default behavior like cursor movement
+    
     if (LOGGING_ENABLED) {
       console.debug(`[InteractiveRatings] Pointer down event on overlay`, {
         pointerType: e.pointerType,
