@@ -6,11 +6,20 @@
 .interactive-ratings-symbol {
   display: inline-block;
   transition: transform 0.1s ease;
+  padding: 0;
+  margin: 0;
+  height: auto;
 }
 
 .interactive-ratings-editor-overlay {
   display: inline-block;
+  position: fixed;
+  z-index: 1000;
+  background-color: var(--background-primary);
   cursor: pointer;
+  margin: 0;
+  border: none;
+  box-sizing: border-box;
   touch-action: none; /* Prevent browser handling of touch gestures */
   -webkit-user-select: none; /* Prevent text selection on iOS */
   user-select: none; /* Prevent text selection */

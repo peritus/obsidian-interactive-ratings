@@ -51,12 +51,8 @@ export function createEditorOverlay(
   overlay.tabIndex = 0;
 
   overlay.className = 'interactive-ratings-editor-overlay';
-  overlay.style.position = 'fixed';
-  overlay.style.zIndex = '1000';
-  overlay.style.backgroundColor = 'var(--background-primary)';
+  // Set dynamic positioning based on editor coordinates
   overlay.style.left = `${posCoords.left}px`;
-
-  // Calculate a more precise vertical position
   overlay.style.top = `${posCoords.top - OVERLAY_VERTICAL_ADJUSTMENT}px`;
 
   // Store position information for comparison
@@ -84,28 +80,17 @@ export function createEditorOverlay(
   // Track current hover position
   overlay.dataset.currentRating = "0";
 
-  // Get the editor element and compute its styles
+  // Get the editor element and compute its styles that need to be applied dynamically
   const editorEl = editor.editorComponent.editorEl;
   const editorStyles = window.getComputedStyle(editorEl);
 
-  // Also, ensure vertical alignment matches
-  overlay.style.verticalAlign = editorStyles.verticalAlign || 'baseline';
-
-  // Match editor font properties exactly
+  // Apply editor-specific font properties which need to be computed at runtime
   overlay.style.fontFamily = editorStyles.fontFamily;
   overlay.style.fontSize = editorStyles.fontSize;
   overlay.style.fontWeight = editorStyles.fontWeight;
   overlay.style.letterSpacing = editorStyles.letterSpacing;
   overlay.style.lineHeight = editorStyles.lineHeight;
-  overlay.style.cursor = 'pointer';
-
-  // Apply exact padding and margins to match editor
-  overlay.style.margin = '0';
-  overlay.style.border = 'none';
-  overlay.style.boxSizing = 'border-box';
-
-  // Prevent any text selection that might cause movement
-  overlay.style.userSelect = 'none';
+  overlay.style.verticalAlign = editorStyles.verticalAlign || 'baseline';
 
   // Use Unicode-aware character counting
   const symbolCount = getUnicodeCharLength(symbols);
@@ -127,11 +112,6 @@ export function createEditorOverlay(
     symbolSpan.textContent = symbolsArray[i];
     symbolSpan.dataset.position = i.toString();
     symbolSpan.dataset.originalChar = symbolsArray[i];
-
-    symbolSpan.style.padding = '0';
-    symbolSpan.style.margin = '0';
-    symbolSpan.style.height = 'auto';
-    symbolSpan.style.display = 'inline-block';
 
     overlay.appendChild(symbolSpan);
   }
