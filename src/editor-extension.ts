@@ -1,0 +1,301 @@
+import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
+import { RangeSetBuilder } from "@codemirror/state";
+import { generateSymbolRegexPatterns, getSymbolSetForPattern, calculateRating, parseRatingText } from './ratings-parser';
+import { generateSymbolsString, formatRatingText } from './utils';
+import { LOGGING_ENABLED } from './constants';
+import { RatingText } from './types';
+
+/**
+ * Interface for rating match data with optional rating text
+ */
+interface RatingMatch {
+  pattern: string;
+  start: number;
+  end: number;
+  symbolSet: any;
+  rating: number;
+  ratingText?: RatingText | null;
+}
+
+/**
+ * Rating widget for inline editing in CodeMirror
+ * Handles both symbols and rating text
+ */
+class RatingWidget extends WidgetType {
+  constructor(
+    private pattern: string,
+    private rating: number,
+    private symbolSet: any,
+    private startPos: number,
+    private endPos: number,
+    private ratingText?: RatingText | null
+  ) {
+    super();
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const container = document.createElement('span');
+    container.className = 'interactive-rating-editor-widget';
+    container.setAttribute('data-rating', this.rating.toString());
+    container.setAttribute('data-pattern-length', this.pattern.length.toString());
+    
+    // Create symbols container
+    const symbolsContainer = document.createElement('span');
+    symbolsContainer.className = 'interactive-rating-symbols';
+    
+    // Create clickable symbols
+    [...this.pattern].forEach((symbol, index) => {
+      const span = document.createElement('span');
+      span.textContent = symbol;
+      span.style.cursor = 'pointer';
+      span.setAttribute('data-symbol-index', index.toString());
+      
+      // Add click handler
+      span.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.updateRating(view, index + 1);
+      });
+      
+      // Add hover preview
+      span.addEventListener('mouseenter', () => {
+        this.previewRating(index + 1, container);
+      });
+      
+      symbolsContainer.appendChild(span);
+    });
+    
+    container.appendChild(symbolsContainer);
+    
+    // Create rating text container if rating text exists
+    if (this.ratingText) {
+      const textContainer = document.createElement('span');
+      textContainer.className = 'interactive-rating-text';
+      textContainer.textContent = this.ratingText.text;
+      container.appendChild(textContainer);
+    }
+    
+    // Reset on mouse leave
+    container.addEventListener('mouseleave', () => {
+      this.renderRating(this.rating, container);
+    });
+    
+    return container;
+  }
+
+  private previewRating(newRating: number, container: HTMLElement): void {
+    const symbolsContainer = container.querySelector('.interactive-rating-symbols');
+    if (!symbolsContainer) return;
+    
+    const spans = symbolsContainer.querySelectorAll('span');
+    spans.forEach((span, index) => {
+      if (index < newRating) {
+        span.textContent = this.symbolSet.full;
+      } else {
+        span.textContent = this.symbolSet.empty;
+      }
+    });
+    
+    // Preview rating text if it exists
+    if (this.ratingText) {
+      const textContainer = container.querySelector('.interactive-rating-text');
+      if (textContainer) {
+        const previewText = formatRatingText(
+          this.ratingText.format,
+          newRating,
+          this.pattern.length,
+          this.ratingText.denominator,
+          !!this.symbolSet.half
+        );
+        textContainer.textContent = previewText;
+      }
+    }
+  }
+
+  private renderRating(rating: number, container: HTMLElement): void {
+    const symbolsContainer = container.querySelector('.interactive-rating-symbols');
+    if (!symbolsContainer) return;
+    
+    const spans = symbolsContainer.querySelectorAll('span');
+    spans.forEach((span, index) => {
+      if (index < rating) {
+        span.textContent = this.symbolSet.full;
+      } else {
+        span.textContent = this.symbolSet.empty;
+      }
+    });
+    
+    // Restore original rating text
+    if (this.ratingText) {
+      const textContainer = container.querySelector('.interactive-rating-text');
+      if (textContainer) {
+        textContainer.textContent = this.ratingText.text;
+      }
+    }
+  }
+
+  private updateRating(view: EditorView, newRating: number): void {
+    try {
+      // Generate new symbol string
+      const newSymbols = generateSymbolsString(
+        newRating,
+        this.pattern.length,
+        this.symbolSet.full,
+        this.symbolSet.empty,
+        this.symbolSet.half || '',
+        !!this.symbolSet.half
+      );
+      
+      // Generate new rating text if it exists
+      let newText = newSymbols;
+      if (this.ratingText) {
+        const newRatingText = formatRatingText(
+          this.ratingText.format,
+          newRating,
+          this.pattern.length,
+          this.ratingText.denominator,
+          !!this.symbolSet.half
+        );
+        newText = newSymbols + newRatingText;
+      }
+      
+      // Update the document (replace both symbols and rating text)
+      view.dispatch({
+        changes: {
+          from: this.startPos,
+          to: this.endPos,
+          insert: newText
+        }
+      });
+      
+      if (LOGGING_ENABLED) {
+        console.debug('[InteractiveRatings] Rating updated in editor', {
+          oldRating: this.rating,
+          newRating,
+          newSymbols,
+          newText,
+          hasRatingText: !!this.ratingText,
+          position: { from: this.startPos, to: this.endPos }
+        });
+      }
+    } catch (error) {
+      if (LOGGING_ENABLED) {
+        console.error('[InteractiveRatings] Error updating rating', error);
+      }
+    }
+  }
+}
+
+/**
+ * ViewPlugin to detect and replace rating patterns with interactive widgets
+ */
+const ratingViewPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = this.buildDecorations(view);
+    }
+
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = this.buildDecorations(update.view);
+      }
+    }
+
+    buildDecorations(view: EditorView): DecorationSet {
+      const builder = new RangeSetBuilder<Decoration>();
+      
+      try {
+        const text = view.state.doc.toString();
+        
+        // Collect all matches first
+        const matches: RatingMatch[] = [];
+        const symbolRegexes = generateSymbolRegexPatterns();
+        
+        for (const regex of symbolRegexes) {
+          let match;
+          regex.lastIndex = 0;
+          
+          while ((match = regex.exec(text)) !== null) {
+            const pattern = match[0];
+            const start = match.index;
+            const end = start + pattern.length;
+            
+            // Skip if too short (minimum 3 symbols)
+            if (pattern.length < 3) continue;
+            
+            const symbolSet = getSymbolSetForPattern(pattern);
+            if (!symbolSet) continue;
+            
+            const rating = calculateRating(pattern, symbolSet);
+            
+            // Check for rating text after the symbols
+            const ratingText = parseRatingText(text, start, end);
+            const actualEnd = ratingText ? ratingText.endPosition : end;
+            
+            matches.push({
+              pattern,
+              start,
+              end: actualEnd,
+              symbolSet,
+              rating,
+              ratingText
+            });
+          }
+        }
+        
+        // Sort matches by start position (required by RangeSetBuilder)
+        matches.sort((a, b) => a.start - b.start);
+        
+        // Remove overlapping matches (keep the first one)
+        const filteredMatches: RatingMatch[] = [];
+        let lastEnd = -1;
+        
+        for (const match of matches) {
+          if (match.start >= lastEnd) {
+            filteredMatches.push(match);
+            lastEnd = match.end;
+          }
+        }
+        
+        // Add decorations in sorted order
+        for (const match of filteredMatches) {
+          const decoration = Decoration.replace({
+            widget: new RatingWidget(
+              match.pattern, 
+              match.rating, 
+              match.symbolSet, 
+              match.start, 
+              match.end,
+              match.ratingText
+            ),
+            inclusive: false
+          });
+          
+          builder.add(match.start, match.end, decoration);
+        }
+        
+        if (LOGGING_ENABLED && filteredMatches.length > 0) {
+          console.debug(`[InteractiveRatings] Built ${filteredMatches.length} rating decorations`, {
+            withRatingText: filteredMatches.filter(m => m.ratingText).length,
+            symbolsOnly: filteredMatches.filter(m => !m.ratingText).length
+          });
+        }
+        
+      } catch (error) {
+        if (LOGGING_ENABLED) {
+          console.error('[InteractiveRatings] Error building decorations', error);
+        }
+      }
+      
+      return builder.finish();
+    }
+  },
+  {
+    decorations: v => v.decorations
+  }
+);
+
+// Export the extension array
+export const ratingEditorExtension = [ratingViewPlugin];

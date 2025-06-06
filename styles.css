@@ -1,35 +1,175 @@
-.interactive-ratings-container {
-  display: inline-block;
-  cursor: pointer;
-}
-
-.interactive-ratings-symbol {
-  display: inline-block;
-  transition: transform 0.1s ease;
+/* Inline Rating Widget Styles - Container */
+.interactive-ratings-inline-widget {
+  display: inline;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
   padding: 0;
   margin: 0;
-  height: auto;
+  outline: none;
 }
 
-.interactive-ratings-editor-overlay {
-  display: inline-block;
-  position: fixed;
-  z-index: 1000;
-  background-color: var(--background-primary);
+/* Symbols Element - Interactive Part */
+.interactive-rating-symbols {
+  display: inline;
   cursor: pointer;
+  padding: 1px 2px;
   margin: 0;
-  border: none;
-  box-sizing: border-box;
-  touch-action: none; /* Prevent browser handling of touch gestures */
-  -webkit-user-select: none; /* Prevent text selection on iOS */
-  user-select: none; /* Prevent text selection */
-  -webkit-touch-callout: none; /* Disable callout on long press */
+  border-radius: 2px;
+  transition: background-color 0.15s ease;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
-/* Make touch targets larger on mobile */
+/* Text Element - Non-Interactive Label */
+.interactive-rating-text {
+  display: inline;
+  cursor: default;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Hover state for symbols only */
+.interactive-rating-symbols.interactive-ratings-hover {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Focus state for accessibility - applied to container */
+.interactive-ratings-inline-widget:focus {
+  outline: 1px solid var(--background-modifier-border-focus);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+.interactive-ratings-inline-widget:focus .interactive-rating-symbols {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Active state for symbols */
+.interactive-rating-symbols:active {
+  background-color: var(--background-modifier-active);
+}
+
+/* Editor Widget Styles - For Editing Mode */
+.interactive-rating-editor-widget {
+  display: inline;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 1px;
+  margin: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.interactive-rating-editor-widget:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+}
+
+/* Editor widget symbols container */
+.interactive-rating-editor-widget .interactive-rating-symbols {
+  display: inline;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  transition: none;
+  background: transparent;
+}
+
+/* Editor widget rating text */
+.interactive-rating-editor-widget .interactive-rating-text {
+  display: inline;
+  cursor: default;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+}
+
+/* Individual symbol spans in editor widget */
+.interactive-rating-editor-widget .interactive-rating-symbols span {
+  cursor: pointer;
+  transition: opacity 0.1s ease;
+}
+
+.interactive-rating-editor-widget .interactive-rating-symbols span:hover {
+  opacity: 0.8;
+}
+
+/* Mobile/touch enhancements */
 @media (max-width: 768px) {
-  .interactive-ratings-symbol {
-    min-height: 24px;
-    padding: 2px;
+  .interactive-rating-symbols {
+    padding: 3px 4px;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
   }
+  
+  .interactive-rating-text {
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .interactive-rating-editor-widget {
+    padding: 3px 4px;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* High contrast accessibility */
+@media (prefers-contrast: high) {
+  .interactive-ratings-inline-widget:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  .interactive-rating-editor-widget:hover {
+    outline: 1px solid currentColor;
+  }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .interactive-rating-symbols,
+  .interactive-rating-editor-widget,
+  .interactive-rating-editor-widget .interactive-rating-symbols span {
+    transition: none;
+  }
+}
+
+/* Ensure proper inline flow */
+interactive-rating,
+interactive-rating-data-pattern,
+interactive-rating-text {
+  display: inline;
+}
+
+/* Debugging styles - only visible when logging is enabled */
+.interactive-rating-editor-widget[data-debug="true"] {
+  outline: 1px dashed rgba(255, 0, 0, 0.3);
+}
+
+.interactive-rating-editor-widget[data-debug="true"]:after {
+  content: " [DEBUG]";
+  font-size: 0.8em;
+  color: rgba(255, 0, 0, 0.5);
 }
