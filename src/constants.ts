@@ -1,7 +1,7 @@
 import { SymbolSet } from './types';
 
-// Global logging control
-export const LOGGING_ENABLED = false;
+// Global logging control - set at build time via environment variable
+export const LOGGING_ENABLED = process.env.LOGGING_ENABLED === 'true';
 
 // Define symbol patterns as a global constant
 export const SYMBOL_PATTERNS: SymbolSet[] = [

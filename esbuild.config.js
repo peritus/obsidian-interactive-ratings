@@ -11,6 +11,10 @@ Interactive Ratings Plugin for Obsidian (https://obsidian.md)
 // Check if watch flag is provided
 const isWatch = process.argv.includes('--watch');
 
+// Get logging configuration from environment variable
+const loggingEnabled = process.env.LOGGING_ENABLED === 'true';
+console.log(`Building with logging ${loggingEnabled ? 'ENABLED' : 'DISABLED'}`);
+
 // Build configuration
 const buildOptions = {
   entryPoints: ['src/main.ts'],
@@ -20,6 +24,9 @@ const buildOptions = {
   target: 'es2016',
   format: 'cjs',
   banner: { js: banner },
+  define: {
+    'process.env.LOGGING_ENABLED': JSON.stringify(loggingEnabled)
+  },
   external: ['obsidian'],
   logLevel: 'info',
   minify: false,
