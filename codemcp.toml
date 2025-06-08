@@ -1,0 +1,36 @@
+prompt = """
+You are an expert software developer.
+
+Development instructions:
+- ...
+
+Commit messages:
+- Write a commit message in imperative mood (e.g., "Refactor X", not "Refactored X").
+- Do not describe success or effort (e.g., avoid "Successfully", "Cleaned up", etc.).
+- Just state what the commit does, not how well or completely it does it.
+"""
+
+paths_blocked = [
+    # Version control internals (major space wasters)
+    ".jj/**",
+    ".git/**",
+
+    # Node modules
+    "node_modules/**",
+]
+
+[commands]
+# Standard build
+build = ["npm", "run", "build"]
+
+# Debug build
+build_debug = ["npm", "run", "build-debug"]
+
+# Type checking
+type_check = ["npm", "run", "type-check"]
+
+# Install packages
+npm_install = ["npm", "install"]
+
+# bump version
+bump_version_patch = ["bump-my-version", "bump", "patch", "-vv"]
