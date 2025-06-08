@@ -19,7 +19,7 @@ interface RatingMatch {
 
 /**
  * Rating widget for inline editing in CodeMirror
- * Handles both symbols and rating text
+ * Handles both symbols and rating text with full half-symbol support
  */
 class RatingWidget extends WidgetType {
   constructor(
@@ -38,6 +38,7 @@ class RatingWidget extends WidgetType {
     container.className = 'interactive-rating-editor-widget';
     container.setAttribute('data-rating', this.rating.toString());
     container.setAttribute('data-pattern-length', this.pattern.length.toString());
+    container.setAttribute('data-supports-half', (!!this.symbolSet.half).toString());
     
     // Create symbols container
     const symbolsContainer = document.createElement('span');
@@ -48,18 +49,28 @@ class RatingWidget extends WidgetType {
       const span = document.createElement('span');
       span.textContent = symbol;
       span.style.cursor = 'pointer';
+      span.style.position = 'relative';
       span.setAttribute('data-symbol-index', index.toString());
       
-      // Add click handler
+      // Add click handler with half-symbol support
       span.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        this.updateRating(view, index + 1);
+        
+        const newRating = this.calculateRatingFromClick(e, span, index);
+        this.updateRating(view, newRating);
       });
       
-      // Add hover preview
-      span.addEventListener('mouseenter', () => {
-        this.previewRating(index + 1, container);
+      // Add hover preview with half-symbol support
+      span.addEventListener('mouseenter', (e) => {
+        const previewRating = this.calculateRatingFromHover(e, span, index);
+        this.previewRating(previewRating, container);
+      });
+      
+      // Add mousemove for fine-grained half-symbol preview
+      span.addEventListener('mousemove', (e) => {
+        const previewRating = this.calculateRatingFromHover(e, span, index);
+        this.previewRating(previewRating, container);
       });
       
       symbolsContainer.appendChild(span);
@@ -80,18 +91,76 @@ class RatingWidget extends WidgetType {
       this.renderRating(this.rating, container);
     });
     
+    // Initial render
+    this.renderRating(this.rating, container);
+    
     return container;
   }
 
+  /**
+   * Calculate rating from click position with half-symbol support
+   */
+  private calculateRatingFromClick(event: MouseEvent, span: HTMLElement, symbolIndex: number): number {
+    if (!this.symbolSet.half) {
+      // No half-symbol support, return full symbol rating
+      return symbolIndex + 1;
+    }
+    
+    const rect = span.getBoundingClientRect();
+    const relativeX = event.clientX - rect.left;
+    const symbolWidth = rect.width;
+    const position = relativeX / symbolWidth;
+    
+    // If clicked on left half, use half symbol; if right half, use full symbol
+    if (position <= 0.5) {
+      return symbolIndex + 0.5;
+    } else {
+      return symbolIndex + 1;
+    }
+  }
+
+  /**
+   * Calculate rating from hover position with half-symbol support
+   */
+  private calculateRatingFromHover(event: MouseEvent, span: HTMLElement, symbolIndex: number): number {
+    if (!this.symbolSet.half) {
+      // No half-symbol support, return full symbol rating
+      return symbolIndex + 1;
+    }
+    
+    const rect = span.getBoundingClientRect();
+    const relativeX = event.clientX - rect.left;
+    const symbolWidth = rect.width;
+    const position = relativeX / symbolWidth;
+    
+    // More responsive half-symbol detection for hover
+    if (position <= 0.5) {
+      return symbolIndex + 0.5;
+    } else {
+      return symbolIndex + 1;
+    }
+  }
+
+  /**
+   * Preview rating with proper half-symbol rendering
+   */
   private previewRating(newRating: number, container: HTMLElement): void {
     const symbolsContainer = container.querySelector('.interactive-rating-symbols');
     if (!symbolsContainer) return;
     
     const spans = symbolsContainer.querySelectorAll('span');
     spans.forEach((span, index) => {
-      if (index < newRating) {
+      const symbolRating = index + 1;
+      const halfRating = index + 0.5;
+      
+      if (symbolRating <= newRating) {
+        // Full symbol
         span.textContent = this.symbolSet.full;
+      } else if (this.symbolSet.half && halfRating <= newRating && halfRating > newRating - 0.5) {
+        // Half symbol
+        span.textContent = this.symbolSet.half;
       } else {
+        // Empty symbol
         span.textContent = this.symbolSet.empty;
       }
     });
@@ -110,17 +179,36 @@ class RatingWidget extends WidgetType {
         textContainer.textContent = previewText;
       }
     }
+    
+    if (LOGGING_ENABLED) {
+      console.debug('[InteractiveRatings] Preview rating with half-symbol support', {
+        newRating,
+        hasHalf: !!this.symbolSet.half,
+        symbolSet: this.symbolSet
+      });
+    }
   }
 
+  /**
+   * Render rating with proper half-symbol display
+   */
   private renderRating(rating: number, container: HTMLElement): void {
     const symbolsContainer = container.querySelector('.interactive-rating-symbols');
     if (!symbolsContainer) return;
     
     const spans = symbolsContainer.querySelectorAll('span');
     spans.forEach((span, index) => {
-      if (index < rating) {
+      const symbolRating = index + 1;
+      const halfRating = index + 0.5;
+      
+      if (symbolRating <= rating) {
+        // Full symbol
         span.textContent = this.symbolSet.full;
+      } else if (this.symbolSet.half && halfRating <= rating && halfRating > rating - 0.5) {
+        // Half symbol
+        span.textContent = this.symbolSet.half;
       } else {
+        // Empty symbol
         span.textContent = this.symbolSet.empty;
       }
     });
@@ -132,11 +220,22 @@ class RatingWidget extends WidgetType {
         textContainer.textContent = this.ratingText.text;
       }
     }
+    
+    if (LOGGING_ENABLED) {
+      console.debug('[InteractiveRatings] Render rating with half-symbol support', {
+        rating,
+        hasHalf: !!this.symbolSet.half,
+        symbolSet: this.symbolSet
+      });
+    }
   }
 
+  /**
+   * Update rating in the document with half-symbol support
+   */
   private updateRating(view: EditorView, newRating: number): void {
     try {
-      // Generate new symbol string
+      // Generate new symbol string with half-symbol support
       const newSymbols = generateSymbolsString(
         newRating,
         this.pattern.length,
@@ -169,12 +268,13 @@ class RatingWidget extends WidgetType {
       });
       
       if (LOGGING_ENABLED) {
-        console.debug('[InteractiveRatings] Rating updated in editor', {
+        console.info('[InteractiveRatings] Rating updated in editor with half-symbol support', {
           oldRating: this.rating,
           newRating,
           newSymbols,
           newText,
           hasRatingText: !!this.ratingText,
+          hasHalf: !!this.symbolSet.half,
           position: { from: this.startPos, to: this.endPos }
         });
       }
@@ -277,9 +377,10 @@ const ratingViewPlugin = ViewPlugin.fromClass(
         }
         
         if (LOGGING_ENABLED && filteredMatches.length > 0) {
-          console.debug(`[InteractiveRatings] Built ${filteredMatches.length} rating decorations`, {
+          console.debug(`[InteractiveRatings] Built ${filteredMatches.length} rating decorations with half-symbol support`, {
             withRatingText: filteredMatches.filter(m => m.ratingText).length,
-            symbolsOnly: filteredMatches.filter(m => !m.ratingText).length
+            symbolsOnly: filteredMatches.filter(m => !m.ratingText).length,
+            withHalfSymbols: filteredMatches.filter(m => m.symbolSet.half).length
           });
         }
         
