@@ -6,6 +6,7 @@ export const LOGGING_ENABLED = process.env.LOGGING_ENABLED === 'true';
 // Define symbol patterns as a global constant
 export const SYMBOL_PATTERNS: SymbolSet[] = [
   { full: '★', empty: '☆', half: null },    // Symbols
+  { full: '✦', empty: '✧', half: null },    // Star symbols
   { full: '●', empty: '○', half: '◐' },     // Circles
   { full: '■', empty: '□', half: '◧' },     // Squares
   { full: '▲', empty: '△', half: null },    // Triangles (no half)
