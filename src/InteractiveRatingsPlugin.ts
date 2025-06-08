@@ -1,19 +1,15 @@
 import { Plugin } from 'obsidian';
 import { LOGGING_ENABLED } from './constants';
-import { processRatings } from './markdown-postprocessor';
 import { ratingEditorExtension } from './editor-extension';
 
 export class InteractiveRatingsPlugin extends Plugin {
   async onload(): Promise<void> {
     if (LOGGING_ENABLED) {
-      console.info('[InteractiveRatings] Plugin loading with inline ratings system');
+      console.info('[InteractiveRatings] Plugin loading - edit mode only');
     }
 
-    // Register editor extension for interactive ratings in editing mode
+    // Register editor extension for interactive ratings in editing mode only
     this.registerEditorExtension(ratingEditorExtension);
-
-    // Keep markdown postprocessor for reading mode (optional - can be disabled if desired)
-    this.registerMarkdownPostProcessor(processRatings);
 
     if (LOGGING_ENABLED) {
       console.info('[InteractiveRatings] Plugin loaded successfully');

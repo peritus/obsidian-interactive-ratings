@@ -1,65 +1,6 @@
-/* Inline Rating Widget Styles - Container */
-.interactive-ratings-inline-widget {
-  display: inline;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  color: inherit;
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  outline: none;
-}
+/* Interactive Ratings Plugin - Editor Mode Only */
 
-/* Symbols Element - Interactive Part */
-.interactive-rating-symbols {
-  display: inline;
-  cursor: pointer;
-  padding: 1px 2px;
-  margin: 0;
-  border-radius: 2px;
-  transition: background-color 0.15s ease;
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Text Element - Non-Interactive Label */
-.interactive-rating-text {
-  display: inline;
-  cursor: default;
-  padding: 0;
-  margin: 0;
-  color: inherit;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Hover state for symbols only */
-.interactive-rating-symbols.interactive-ratings-hover {
-  background-color: var(--background-modifier-hover);
-}
-
-/* Focus state for accessibility - applied to container */
-.interactive-ratings-inline-widget:focus {
-  outline: 1px solid var(--background-modifier-border-focus);
-  outline-offset: 1px;
-  border-radius: 2px;
-}
-
-.interactive-ratings-inline-widget:focus .interactive-rating-symbols {
-  background-color: var(--background-modifier-hover);
-}
-
-/* Active state for symbols */
-.interactive-rating-symbols:active {
-  background-color: var(--background-modifier-active);
-}
-
-/* Editor Widget Styles - For Editing Mode */
+/* Editor Widget Styles - For Editing Mode Only */
 .interactive-rating-editor-widget {
   display: inline;
   font-family: inherit;
@@ -86,10 +27,10 @@
 .interactive-rating-editor-widget .interactive-rating-symbols {
   display: inline;
   cursor: pointer;
-  padding: 0;
+  padding: 1px 2px;
   margin: 0;
-  border-radius: 0;
-  transition: none;
+  border-radius: 2px;
+  transition: background-color 0.15s ease;
   background: transparent;
 }
 
@@ -157,41 +98,18 @@
   pointer-events: none;
 }
 
-/* Mobile/touch enhancements */
+/* Mobile/touch enhancements for editor */
 @media (max-width: 768px) {
-  .interactive-rating-symbols {
-    padding: 3px 4px;
-    min-height: 28px;
-    display: inline-flex;
-    align-items: center;
-  }
-  
-  .interactive-rating-text {
-    min-height: 28px;
-    display: inline-flex;
-    align-items: center;
-  }
-
   .interactive-rating-editor-widget {
     padding: 3px 4px;
     min-height: 28px;
     display: inline-flex;
     align-items: center;
   }
-
-  /* Hide half-symbol dividers on mobile for cleaner touch interactions */
-  .interactive-rating-editor-widget[data-supports-half="true"] .interactive-rating-symbols span::before {
-    display: none;
-  }
 }
 
-/* High contrast accessibility */
+/* High contrast accessibility for editor */
 @media (prefers-contrast: high) {
-  .interactive-ratings-inline-widget:focus {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-  }
-
   .interactive-rating-editor-widget:hover {
     outline: 1px solid currentColor;
   }
@@ -209,31 +127,12 @@
 
 /* Reduced motion accessibility */
 @media (prefers-reduced-motion: reduce) {
-  .interactive-rating-symbols,
   .interactive-rating-editor-widget,
   .interactive-rating-editor-widget .interactive-rating-symbols span,
   .interactive-rating-editor-widget .interactive-rating-symbols span::before,
   .interactive-rating-editor-widget .interactive-rating-symbols span::after {
     transition: none;
   }
-}
-
-/* Ensure proper inline flow */
-interactive-rating,
-interactive-rating-data-pattern,
-interactive-rating-text {
-  display: inline;
-}
-
-/* Enhanced debugging styles */
-.interactive-rating-editor-widget[data-debug="true"] {
-  outline: 1px dashed rgba(255, 0, 0, 0.3);
-}
-
-.interactive-rating-editor-widget[data-debug="true"]:after {
-  content: " [DEBUG: Half=" attr(data-supports-half) "]";
-  font-size: 0.8em;
-  color: rgba(255, 0, 0, 0.5);
 }
 
 /* Animation for rating transitions */
