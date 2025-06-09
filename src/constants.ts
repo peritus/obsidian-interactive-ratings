@@ -12,6 +12,16 @@ export const SYMBOL_PATTERNS: SymbolSet[] = [
   { full: '■', empty: '□', half: '◧' },     // Squares
   { full: '▲', empty: '△', half: null },    // Triangles (no half)
 
+  // Heart symbols
+  { full: '❤️', empty: '🤍', half: null },   // Red hearts
+  { full: '🧡', empty: '🤍', half: null },   // Orange hearts
+  { full: '💛', empty: '🤍', half: null },   // Yellow hearts
+  { full: '💚', empty: '🤍', half: null },   // Green hearts
+  { full: '💙', empty: '🤍', half: null },   // Blue hearts
+  { full: '💜', empty: '🤍', half: null },   // Purple hearts
+  { full: '🖤', empty: '🤍', half: null },   // Black hearts
+  { full: '🤎', empty: '🤍', half: null },   // Brown hearts
+
   // Progress bar patterns
   { full: '█', empty: '▁', half: null  },   // Block progress
   { full: '⣿', empty: '⣀', half: '⡇' },     // Braille dots

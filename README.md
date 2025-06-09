@@ -37,6 +37,14 @@ The numerical rating updates automatically when you change the symbols.
 | Circles | ● | ○ | ◐ | `●●●○○○○○○○ 3/10` Movie review scale |
 | Squares | ■ | □ | ◧ | `■■■□ (3/4)` Recipe difficulty |
 | Triangles | ▲ | △ |  | `▲▲▲▲▲△△△△△△△ 5/12` Hiking difficulty |
+| Red Hearts | ❤️ | 🤍 |  | `❤️❤️❤️🤍🤍 (3/5)` Celebrity crush |
+| Orange Hearts | 🧡 | 🤍 |  | `🧡🧡🧡🧡🤍 80%` Sunset addiction |
+| Yellow Hearts | 💛 | 🤍 |  | `💛💛🤍🤍 2/4` Wizard vibes |
+| Green Hearts | 💚 | 🤍 |  | `💚💚💚🤍🤍🤍 50%` Plant guilt |
+| Blue Hearts | 💙 | 🤍 |  | `💙💙🤍🤍🤍 (2/5)` Ocean yearning |
+| Purple Hearts | 💜 | 🤍 |  | `💜💜💜💜🤍 4/5` Unicorn belief |
+| Black Hearts | 🖤 | 🤍 |  | `🖤🖤🖤🤍 75%` Villain sympathy |
+| Brown Hearts | 🤎 | 🤍 |  | `🤎🤎🤍🤍🤍 (2/5)` Chocolate dependency |
 | Block Progress | █ | ▁ |  | `███▁▁▁ (3/6)` Project completion |
 | Braille Dots | ⣿ | ⣀ | ⡇ | `⣿⣿⡇⣀⣀⣀⣀⣀⣀⣀ 2.5/10` |
 | Solid/Empty Circles | ⬤ | ○ |  | `⬤⬤⬤○○○○○○○○○ 25%` Budget spending |
