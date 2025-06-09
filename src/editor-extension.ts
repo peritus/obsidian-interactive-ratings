@@ -298,7 +298,7 @@ const ratingViewPlugin = ViewPlugin.fromClass(
     }
 
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (update.docChanged || update.viewportChanged || update.selectionSet) {
         this.decorations = this.buildDecorations(update.view);
       }
     }
@@ -308,6 +308,7 @@ const ratingViewPlugin = ViewPlugin.fromClass(
       
       try {
         const text = view.state.doc.toString();
+        const cursorPos = view.state.selection.main.head;
         
         // Collect all matches first
         const matches: RatingMatch[] = [];
@@ -359,8 +360,20 @@ const ratingViewPlugin = ViewPlugin.fromClass(
           }
         }
         
-        // Add decorations in sorted order
+        // Add decorations in sorted order, but skip if cursor is nearby
         for (const match of filteredMatches) {
+          // Skip creating widget if cursor is near this rating
+          if (cursorPos >= match.start - 1 && cursorPos <= match.end + 1) {
+            if (LOGGING_ENABLED) {
+              console.debug('[InteractiveRatings] Skipping widget creation due to nearby cursor', {
+                cursorPos,
+                ratingStart: match.start,
+                ratingEnd: match.end
+              });
+            }
+            continue;
+          }
+          
           const decoration = Decoration.replace({
             widget: new RatingWidget(
               match.pattern, 
@@ -377,7 +390,11 @@ const ratingViewPlugin = ViewPlugin.fromClass(
         }
         
         if (LOGGING_ENABLED && filteredMatches.length > 0) {
-          console.debug(`[InteractiveRatings] Built ${filteredMatches.length} rating decorations with half-symbol support`, {
+          const skippedCount = filteredMatches.filter(m => 
+            cursorPos >= m.start - 1 && cursorPos <= m.end + 1
+          ).length;
+          console.debug(`[InteractiveRatings] Built ${filteredMatches.length - skippedCount}/${filteredMatches.length} rating decorations (${skippedCount} skipped due to cursor proximity)`, {
+            cursorPos,
             withRatingText: filteredMatches.filter(m => m.ratingText).length,
             symbolsOnly: filteredMatches.filter(m => !m.ratingText).length,
             withHalfSymbols: filteredMatches.filter(m => m.symbolSet.half).length
