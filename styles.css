@@ -8,29 +8,24 @@
   line-height: inherit;
   color: inherit;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  padding: 1px;
+  border: none;
+  padding: 0;
   margin: 0;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
 }
 
 .interactive-rating-editor-widget:hover {
-  background-color: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
+  /* No visual changes on hover */
 }
 
 /* Editor widget symbols container */
 .interactive-rating-editor-widget .interactive-rating-symbols {
   display: inline;
   cursor: pointer;
-  padding: 1px 2px;
+  padding: 0;
   margin: 0;
-  border-radius: 2px;
-  transition: background-color 0.15s ease;
   background: transparent;
 }
 
@@ -47,81 +42,59 @@
 .interactive-rating-editor-widget .interactive-rating-symbols span {
   position: relative;
   cursor: pointer;
-  transition: opacity 0.1s ease, filter 0.1s ease;
   display: inline-block;
 }
 
 /* Enhanced hover effect for symbols with half-symbol visual feedback */
 .interactive-rating-editor-widget .interactive-rating-symbols span:hover {
-  opacity: 0.8;
-  filter: brightness(1.1);
+  /* No visual changes on hover */
 }
 
 /* Half-symbol visual feedback - subtle indicator for symbols that support halves */
 .interactive-rating-editor-widget[data-supports-half="true"] .interactive-rating-symbols span {
-  border-radius: 1px;
+  /* No visual changes */
 }
 
 .interactive-rating-editor-widget[data-supports-half="true"] .interactive-rating-symbols span:hover {
-  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.2);
+  /* No visual changes */
 }
 
 /* Visual hint for half-symbol positioning */
 .interactive-rating-editor-widget[data-supports-half="true"] .interactive-rating-symbols span::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1px;
-  height: 100%;
-  background: rgba(var(--text-muted-rgb), 0.1);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
+  /* No visual elements */
 }
 
 /* Show the half-symbol divider on hover when half symbols are supported */
 .interactive-rating-editor-widget[data-supports-half="true"]:hover .interactive-rating-symbols span::before {
-  opacity: 1;
+  /* No visual elements */
 }
 
 /* Additional visual enhancement for half-symbol interactions */
 .interactive-rating-editor-widget[data-supports-half="true"] .interactive-rating-symbols span:hover::after {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border: 1px solid rgba(var(--accent-rgb), 0.3);
-  border-radius: 2px;
-  pointer-events: none;
+  /* No visual elements */
 }
 
 /* Mobile/touch enhancements for editor */
 @media (max-width: 768px) {
   .interactive-rating-editor-widget {
-    padding: 3px 4px;
-    min-height: 28px;
-    display: inline-flex;
-    align-items: center;
+    padding: 0;
+    display: inline;
   }
 }
 
 /* High contrast accessibility for editor */
 @media (prefers-contrast: high) {
   .interactive-rating-editor-widget:hover {
-    outline: 1px solid currentColor;
+    /* No visual changes */
   }
 
   /* Enhanced visibility for half-symbol indicators in high contrast */
   .interactive-rating-editor-widget[data-supports-half="true"] .interactive-rating-symbols span::before {
-    background: currentColor;
-    opacity: 0.3;
+    /* No visual elements */
   }
 
   .interactive-rating-editor-widget[data-supports-half="true"]:hover .interactive-rating-symbols span::before {
-    opacity: 0.6;
+    /* No visual elements */
   }
 }
 
@@ -131,20 +104,20 @@
   .interactive-rating-editor-widget .interactive-rating-symbols span,
   .interactive-rating-editor-widget .interactive-rating-symbols span::before,
   .interactive-rating-editor-widget .interactive-rating-symbols span::after {
-    transition: none;
+    /* No transitions to remove */
   }
 }
 
 /* Animation for rating transitions */
 .interactive-rating-editor-widget .interactive-rating-symbols {
-  transition: all 0.15s ease;
+  /* No transitions */
 }
 
 .interactive-rating-editor-widget .interactive-rating-text {
-  transition: all 0.15s ease;
+  /* No transitions */
 }
 
 /* Smooth symbol transitions during preview */
 .interactive-rating-editor-widget .interactive-rating-symbols span {
-  transition: all 0.1s ease;
+  /* No transitions */
 }
