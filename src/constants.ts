@@ -1,7 +1,7 @@
 import { SymbolSet } from './types';
 
-// Global logging control - set at build time via environment variable
-export const LOGGING_ENABLED = process.env.LOGGING_ENABLED === 'true';
+// Global logging control - set to false for production, true for debugging
+export const LOGGING_ENABLED = false;
 
 // Define symbol patterns as a global constant
 export const SYMBOL_PATTERNS: SymbolSet[] = [
@@ -33,6 +33,18 @@ export const SYMBOL_PATTERNS: SymbolSet[] = [
   { full: '⬤', empty: '◯', half: null },   // Bold circles
   { full: '⚫', empty: '⚪', half: null },   // Black/white circles
   { full: '█', empty: '░', half: null },    // Block/light shade
+
+  // Full-only symbols (same symbol for full and empty, no half)
+  { full: '🎥', empty: '🎥', half: null },    // Movie cameras
+  { full: '🏆', empty: '🏆', half: null },    // Trophies
+  { full: '⭐', empty: '⭐', half: null },    // Gold stars
+  { full: '💎', empty: '💎', half: null },    // Diamonds
+  { full: '🔥', empty: '🔥', half: null },    // Fire
+  { full: '⚡', empty: '⚡', half: null },    // Lightning
+  { full: '🎯', empty: '🎯', half: null },    // Target/bullseye
+  { full: '🚀', empty: '🚀', half: null },    // Rockets
+  { full: '💰', empty: '💰', half: null },    // Money bags
+  { full: '🎖️', empty: '🎖️', half: null },   // Military medals
 ];
 
 // Interaction constants

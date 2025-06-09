@@ -1,4 +1,5 @@
 import { LOGGING_ENABLED } from './constants';
+import { SymbolSet } from './types';
 
 /**
  * Get the length of a string in Unicode characters
@@ -22,6 +23,13 @@ export function utf16ToUnicodePosition(str: string, utf16Position: number): numb
   const utf16Substring = str.substring(0, utf16Position);
   // Return the Unicode character length of that substring
   return getUnicodeCharLength(utf16Substring);
+}
+
+/**
+ * Check if a symbol set is full-only (same symbol for full and empty, no half)
+ */
+export function isFullOnlySymbol(symbolSet: SymbolSet): boolean {
+  return symbolSet.full === symbolSet.empty && !symbolSet.half;
 }
 
 /**
@@ -67,7 +75,8 @@ export function calculateNewRating(overlay: HTMLElement, clientX: number): numbe
 }
 
 /**
- * Generate a string of rating symbols
+ * Generate a string of rating symbols for display purposes
+ * For full-only symbols with rating text, this shows denominator count symbols
  */
 export function generateSymbolsString(
   rating: number, 
@@ -75,11 +84,17 @@ export function generateSymbolsString(
   full: string, 
   empty: string, 
   half: string, 
-  supportsHalf: boolean
+  supportsHalf: boolean,
+  symbolSet?: SymbolSet,
+  denominator?: number
 ): string {
+  // For full-only symbols with rating text, use denominator for total count
+  const isFullOnly = symbolSet && isFullOnlySymbol(symbolSet);
+  const totalSymbols = (isFullOnly && denominator) ? denominator : symbolCount;
+  
   let newSymbols = '';
 
-  for (let i = 0; i < symbolCount; i++) {
+  for (let i = 0; i < totalSymbols; i++) {
     if (i < Math.floor(rating)) {
       newSymbols += full;
     } else if (supportsHalf && i === Math.floor(rating) && rating % 1 !== 0) {
@@ -93,15 +108,40 @@ export function generateSymbolsString(
     console.debug(`[InteractiveRatings] Generated symbols string`, {
       rating,
       symbolCount,
+      totalSymbols,
       full,
       empty,
       half,
       supportsHalf,
+      isFullOnly,
+      denominator,
       newSymbols
     });
   };
 
   return newSymbols;
+}
+
+/**
+ * Generate a string of rating symbols for writing to disk (full-only symbols only include rated ones)
+ */
+export function generateSymbolsStringForDisk(
+  rating: number, 
+  symbolCount: number, 
+  full: string, 
+  empty: string, 
+  half: string, 
+  supportsHalf: boolean,
+  symbolSet?: SymbolSet
+): string {
+  // For full-only symbols, only write the rated symbols
+  if (symbolSet && isFullOnlySymbol(symbolSet)) {
+    const ratedCount = Math.floor(rating);
+    return full.repeat(ratedCount);
+  }
+
+  // For regular symbols, use the standard logic
+  return generateSymbolsString(rating, symbolCount, full, empty, half, supportsHalf, symbolSet);
 }
 
 /**

@@ -1,7 +1,7 @@
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 import { generateSymbolRegexPatterns, getSymbolSetForPattern, calculateRating, parseRatingText } from './ratings-parser';
-import { generateSymbolsString, formatRatingText, getUnicodeCharLength, utf16ToUnicodePosition } from './utils';
+import { generateSymbolsString, generateSymbolsStringForDisk, formatRatingText, getUnicodeCharLength, utf16ToUnicodePosition, isFullOnlySymbol } from './utils';
 import { LOGGING_ENABLED } from './constants';
 import { RatingText } from './types';
 
@@ -19,7 +19,7 @@ interface RatingMatch {
 
 /**
  * Rating widget for inline editing in CodeMirror
- * Handles both symbols and rating text with full half-symbol support
+ * Handles both symbols and rating text with full half-symbol support and full-only symbols
  */
 class RatingWidget extends WidgetType {
   constructor(
@@ -41,41 +41,48 @@ class RatingWidget extends WidgetType {
     container.setAttribute('data-pattern-length', unicodeLength.toString());
     container.setAttribute('data-supports-half', (!!this.symbolSet.half).toString());
     
+    const isFullOnly = isFullOnlySymbol(this.symbolSet);
+    container.setAttribute('data-full-only', isFullOnly.toString());
+    
+    // For full-only symbols, use denominator from rating text if available
+    const displaySymbolCount = (isFullOnly && this.ratingText) ? this.ratingText.denominator : unicodeLength;
+    container.setAttribute('data-display-symbol-count', displaySymbolCount.toString());
+    
     // Create symbols container
     const symbolsContainer = document.createElement('span');
     symbolsContainer.className = 'interactive-rating-symbols';
     
-    // Create clickable symbols
-    [...this.pattern].forEach((symbol, index) => {
+    // Create clickable symbols based on display count
+    for (let i = 0; i < displaySymbolCount; i++) {
       const span = document.createElement('span');
-      span.textContent = symbol;
+      span.textContent = this.symbolSet.full;
       span.style.cursor = 'pointer';
       span.style.position = 'relative';
-      span.setAttribute('data-symbol-index', index.toString());
+      span.setAttribute('data-symbol-index', i.toString());
       
-      // Add click handler with half-symbol support
+      // Add click handler with full-only validation
       span.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         
-        const newRating = this.calculateRatingFromClick(e, span, index);
+        const newRating = this.calculateRatingFromClick(e, span, i);
         this.updateRating(view, newRating);
       });
       
-      // Add hover preview with half-symbol support
+      // Add hover preview
       span.addEventListener('mouseenter', (e) => {
-        const previewRating = this.calculateRatingFromHover(e, span, index);
+        const previewRating = this.calculateRatingFromHover(e, span, i);
         this.previewRating(previewRating, container);
       });
       
-      // Add mousemove for fine-grained half-symbol preview
+      // Add mousemove for fine-grained preview
       span.addEventListener('mousemove', (e) => {
-        const previewRating = this.calculateRatingFromHover(e, span, index);
+        const previewRating = this.calculateRatingFromHover(e, span, i);
         this.previewRating(previewRating, container);
       });
       
       symbolsContainer.appendChild(span);
-    });
+    }
     
     container.appendChild(symbolsContainer);
     
@@ -99,9 +106,16 @@ class RatingWidget extends WidgetType {
   }
 
   /**
-   * Calculate rating from click position with half-symbol support
+   * Calculate rating from click position with full-only validation
    */
   private calculateRatingFromClick(event: MouseEvent, span: HTMLElement, symbolIndex: number): number {
+    const isFullOnly = isFullOnlySymbol(this.symbolSet);
+    
+    // For full-only symbols, don't support half ratings and enforce minimum rating of 1
+    if (isFullOnly) {
+      return Math.max(1, symbolIndex + 1);
+    }
+    
     if (!this.symbolSet.half) {
       // No half-symbol support, return full symbol rating
       return symbolIndex + 1;
@@ -121,9 +135,16 @@ class RatingWidget extends WidgetType {
   }
 
   /**
-   * Calculate rating from hover position with half-symbol support
+   * Calculate rating from hover position with full-only validation
    */
   private calculateRatingFromHover(event: MouseEvent, span: HTMLElement, symbolIndex: number): number {
+    const isFullOnly = isFullOnlySymbol(this.symbolSet);
+    
+    // For full-only symbols, don't support half ratings and enforce minimum rating of 1
+    if (isFullOnly) {
+      return Math.max(1, symbolIndex + 1);
+    }
+    
     if (!this.symbolSet.half) {
       // No half-symbol support, return full symbol rating
       return symbolIndex + 1;
@@ -143,26 +164,47 @@ class RatingWidget extends WidgetType {
   }
 
   /**
-   * Preview rating with proper half-symbol rendering
+   * Preview rating with proper half-symbol rendering and full-only symbol support
    */
   private previewRating(newRating: number, container: HTMLElement): void {
     const symbolsContainer = container.querySelector('.interactive-rating-symbols');
     if (!symbolsContainer) return;
     
     const spans = symbolsContainer.querySelectorAll('span');
+    const isFullOnly = isFullOnlySymbol(this.symbolSet);
+    
     spans.forEach((span, index) => {
       const symbolRating = index + 1;
       const halfRating = index + 0.5;
       
-      if (symbolRating <= newRating) {
-        // Full symbol
+      if (isFullOnly) {
+        // For full-only symbols: show full symbol for rated, grey for unrated
         span.textContent = this.symbolSet.full;
-      } else if (this.symbolSet.half && halfRating <= newRating && halfRating > newRating - 0.5) {
-        // Half symbol
-        span.textContent = this.symbolSet.half;
+        if (symbolRating <= newRating) {
+          span.style.opacity = '1';
+          span.style.filter = 'none';
+        } else {
+          span.style.opacity = '0.5';
+          span.style.filter = 'grayscale(100%)';
+        }
       } else {
-        // Empty symbol
-        span.textContent = this.symbolSet.empty;
+        // Regular symbol behavior
+        if (symbolRating <= newRating) {
+          // Full symbol
+          span.textContent = this.symbolSet.full;
+          span.style.opacity = '1';
+          span.style.filter = 'none';
+        } else if (this.symbolSet.half && halfRating <= newRating && halfRating > newRating - 0.5) {
+          // Half symbol
+          span.textContent = this.symbolSet.half;
+          span.style.opacity = '1';
+          span.style.filter = 'none';
+        } else {
+          // Empty symbol
+          span.textContent = this.symbolSet.empty;
+          span.style.opacity = '1';
+          span.style.filter = 'none';
+        }
       }
     });
     
@@ -170,50 +212,67 @@ class RatingWidget extends WidgetType {
     if (this.ratingText) {
       const textContainer = container.querySelector('.interactive-rating-text');
       if (textContainer) {
-        // Use the Unicode character count as the denominator for preview
-        const unicodeLength = getUnicodeCharLength(this.pattern);
         const previewText = formatRatingText(
           this.ratingText.format,
           newRating,
-          unicodeLength,
-          unicodeLength, // Use symbol count as denominator
-          !!this.symbolSet.half
+          this.ratingText.denominator, // Use original denominator
+          this.ratingText.denominator,
+          !!this.symbolSet.half && !isFullOnly
         );
         textContainer.textContent = previewText;
       }
     }
     
     if (LOGGING_ENABLED) {
-      console.debug('[InteractiveRatings] Preview rating with half-symbol support', {
+      console.debug('[InteractiveRatings] Preview rating with full-only support', {
         newRating,
         hasHalf: !!this.symbolSet.half,
+        isFullOnly,
         symbolSet: this.symbolSet,
-        denominator: getUnicodeCharLength(this.pattern)
+        denominator: this.ratingText?.denominator
       });
     }
   }
 
   /**
-   * Render rating with proper half-symbol display
+   * Render rating with proper half-symbol display and full-only symbol support
    */
   private renderRating(rating: number, container: HTMLElement): void {
     const symbolsContainer = container.querySelector('.interactive-rating-symbols');
     if (!symbolsContainer) return;
     
     const spans = symbolsContainer.querySelectorAll('span');
+    const isFullOnly = isFullOnlySymbol(this.symbolSet);
+    
     spans.forEach((span, index) => {
       const symbolRating = index + 1;
       const halfRating = index + 0.5;
       
-      if (symbolRating <= rating) {
-        // Full symbol
+      if (isFullOnly) {
+        // For full-only symbols: show full symbol for rated, grey for unrated
         span.textContent = this.symbolSet.full;
-      } else if (this.symbolSet.half && halfRating <= rating && halfRating > rating - 0.5) {
-        // Half symbol
-        span.textContent = this.symbolSet.half;
+        if (symbolRating <= rating) {
+          span.style.opacity = '1';
+          span.style.filter = 'none';
+        } else {
+          span.style.opacity = '0.5';
+          span.style.filter = 'grayscale(100%)';
+        }
       } else {
-        // Empty symbol
-        span.textContent = this.symbolSet.empty;
+        // Regular symbol behavior
+        if (symbolRating <= rating) {
+          // Full symbol
+          span.textContent = this.symbolSet.full;
+        } else if (this.symbolSet.half && halfRating <= rating && halfRating > rating - 0.5) {
+          // Half symbol
+          span.textContent = this.symbolSet.half;
+        } else {
+          // Empty symbol
+          span.textContent = this.symbolSet.empty;
+        }
+        // Reset any styling for regular symbols
+        span.style.opacity = '1';
+        span.style.filter = 'none';
       }
     });
     
@@ -226,42 +285,42 @@ class RatingWidget extends WidgetType {
     }
     
     if (LOGGING_ENABLED) {
-      console.debug('[InteractiveRatings] Render rating with half-symbol support', {
+      console.debug('[InteractiveRatings] Render rating with full-only support', {
         rating,
         hasHalf: !!this.symbolSet.half,
+        isFullOnly,
         symbolSet: this.symbolSet
       });
     }
   }
 
   /**
-   * Update rating in the document with half-symbol support
+   * Update rating in the document with half-symbol support and full-only symbols
    */
   private updateRating(view: EditorView, newRating: number): void {
     try {
-      // Use Unicode character count for proper emoji handling
-      const unicodeLength = getUnicodeCharLength(this.pattern);
+      const isFullOnly = isFullOnlySymbol(this.symbolSet);
       
-      // Generate new symbol string with half-symbol support
-      const newSymbols = generateSymbolsString(
+      // For full-only symbols, use the disk-safe function that only includes rated symbols
+      const newSymbols = generateSymbolsStringForDisk(
         newRating,
-        unicodeLength,
+        getUnicodeCharLength(this.pattern),
         this.symbolSet.full,
         this.symbolSet.empty,
         this.symbolSet.half || '',
-        !!this.symbolSet.half
+        !!this.symbolSet.half && !isFullOnly,
+        this.symbolSet
       );
       
       // Generate new rating text if it exists
       let newText = newSymbols;
       if (this.ratingText) {
-        // Use the Unicode character count as the denominator for final update
         const newRatingText = formatRatingText(
           this.ratingText.format,
           newRating,
-          unicodeLength,
-          unicodeLength, // Use symbol count as denominator
-          !!this.symbolSet.half
+          this.ratingText.denominator, // Use original denominator
+          this.ratingText.denominator,
+          !!this.symbolSet.half && !isFullOnly
         );
         newText = newSymbols + newRatingText;
       }
@@ -276,17 +335,15 @@ class RatingWidget extends WidgetType {
       });
       
       if (LOGGING_ENABLED) {
-        console.info('[InteractiveRatings] Rating updated in editor with half-symbol support', {
+        console.info('[InteractiveRatings] Rating updated in editor with full-only support', {
           oldRating: this.rating,
           newRating,
           newSymbols,
           newText,
           hasRatingText: !!this.ratingText,
           hasHalf: !!this.symbolSet.half,
-          oldDenominator: this.ratingText?.denominator,
-          newDenominator: unicodeLength,
-          unicodeLengthCalculated: unicodeLength,
-          rawPatternLength: this.pattern.length,
+          isFullOnly,
+          originalDenominator: this.ratingText?.denominator,
           position: { from: this.startPos, to: this.endPos }
         });
       }
@@ -343,9 +400,25 @@ const ratingViewPlugin = ViewPlugin.fromClass(
             if (!symbolSet) continue;
             
             const rating = calculateRating(pattern, symbolSet);
+            const isFullOnly = isFullOnlySymbol(symbolSet);
+            
+            // For full-only symbols, skip if rating is 0 (not supported)
+            if (isFullOnly && rating === 0) continue;
             
             // Check for rating text after the symbols - pass UTF-16 positions
             const ratingText = parseRatingText(text, start, end);
+            
+            // For full-only symbols, rating text is highly recommended
+            if (isFullOnly && !ratingText) {
+              if (LOGGING_ENABLED) {
+                console.debug('[InteractiveRatings] Skipping full-only symbol without rating text', {
+                  pattern,
+                  symbolSet
+                });
+              }
+              continue;
+            }
+            
             const actualEnd = ratingText ? ratingText.endPosition : end;
             
             if (LOGGING_ENABLED) {
@@ -358,7 +431,8 @@ const ratingViewPlugin = ViewPlugin.fromClass(
                 rating,
                 hasRatingText: !!ratingText,
                 ratingTextDetails: ratingText,
-                symbolSet: symbolSet
+                symbolSet: symbolSet,
+                isFullOnly
               });
             }
             
@@ -420,11 +494,13 @@ const ratingViewPlugin = ViewPlugin.fromClass(
           const skippedCount = filteredMatches.filter(m => 
             cursorPos >= m.start - 1 && cursorPos <= m.end + 1
           ).length;
+          const fullOnlyCount = filteredMatches.filter(m => isFullOnlySymbol(m.symbolSet)).length;
           console.debug(`[InteractiveRatings] Built ${filteredMatches.length - skippedCount}/${filteredMatches.length} rating decorations (${skippedCount} skipped due to cursor proximity)`, {
             cursorPos,
             withRatingText: filteredMatches.filter(m => m.ratingText).length,
             symbolsOnly: filteredMatches.filter(m => !m.ratingText).length,
-            withHalfSymbols: filteredMatches.filter(m => m.symbolSet.half).length
+            withHalfSymbols: filteredMatches.filter(m => m.symbolSet.half).length,
+            fullOnlySymbols: fullOnlyCount
           });
         }
         
