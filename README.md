@@ -32,6 +32,7 @@ The numerical rating updates automatically when you change the symbols.
 | Symbol Type | Full | Empty | Half | Examples |
 |-------------|------|-------|------|----------|
 | Stars | ★ | ☆ |  | `★★★☆☆ (3/5)` Book rating |
+| Star Symbols | ✦ | ✧ |  | `✦✦✦✧✧ (3/5)` Stargazing |
 | Circles | ● | ○ | ◐ | `●●●○○○○○○○ 3/10` Movie review scale |
 | Squares | ■ | □ | ◧ | `■■■□ (3/4)` Recipe difficulty |
 | Triangles | ▲ | △ |  | `▲▲▲▲▲△△△△△△△ 5/12` Hiking difficulty |
