@@ -169,11 +169,12 @@ class RatingWidget extends WidgetType {
     if (this.ratingText) {
       const textContainer = container.querySelector('.interactive-rating-text');
       if (textContainer) {
+        // Use the current pattern length as the denominator for preview
         const previewText = formatRatingText(
           this.ratingText.format,
           newRating,
           this.pattern.length,
-          this.ratingText.denominator,
+          this.pattern.length, // Use symbol count as denominator
           !!this.symbolSet.half
         );
         textContainer.textContent = previewText;
@@ -184,7 +185,8 @@ class RatingWidget extends WidgetType {
       console.debug('[InteractiveRatings] Preview rating with half-symbol support', {
         newRating,
         hasHalf: !!this.symbolSet.half,
-        symbolSet: this.symbolSet
+        symbolSet: this.symbolSet,
+        denominator: this.pattern.length
       });
     }
   }
@@ -248,11 +250,12 @@ class RatingWidget extends WidgetType {
       // Generate new rating text if it exists
       let newText = newSymbols;
       if (this.ratingText) {
+        // Use the current pattern length as the denominator for final update
         const newRatingText = formatRatingText(
           this.ratingText.format,
           newRating,
           this.pattern.length,
-          this.ratingText.denominator,
+          this.pattern.length, // Use symbol count as denominator
           !!this.symbolSet.half
         );
         newText = newSymbols + newRatingText;
@@ -275,6 +278,8 @@ class RatingWidget extends WidgetType {
           newText,
           hasRatingText: !!this.ratingText,
           hasHalf: !!this.symbolSet.half,
+          oldDenominator: this.ratingText?.denominator,
+          newDenominator: this.pattern.length,
           position: { from: this.startPos, to: this.endPos }
         });
       }
