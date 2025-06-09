@@ -167,6 +167,7 @@ function escapeRegexChar(char: string): string {
 /**
  * Generate regex patterns for detecting rating symbols in text
  * Fixed to handle multibyte Unicode characters (emojis) properly
+ * Now supports 1+ symbols to detect low ratings
  */
 export function generateSymbolRegexPatterns(): RegExp[] {
   return SYMBOL_PATTERNS.map(symbols => {
@@ -178,13 +179,15 @@ export function generateSymbolRegexPatterns(): RegExp[] {
     
     // Escape each symbol for regex and create alternation
     const escapedSymbols = symbolChars.map(escapeRegexChar);
-    const pattern = `(?:${escapedSymbols.join('|')}){3,}`;
+    // Changed from {3,} to {1,} to detect single symbols (fixes low rating bug)
+    const pattern = `(?:${escapedSymbols.join('|')})+`;
     
     if (LOGGING_ENABLED) {
       console.debug(`[InteractiveRatings] Generated regex pattern for symbol set`, {
         symbolSet: symbols,
         pattern,
-        escapedSymbols
+        escapedSymbols,
+        allowsSingleSymbol: true
       });
     }
     

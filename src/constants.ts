@@ -3,8 +3,8 @@ import { SymbolSet } from './types';
 // Global logging control - set to false for production, true for debugging
 export const LOGGING_ENABLED = false;
 
-// Define symbol patterns as a global constant
-export const SYMBOL_PATTERNS: SymbolSet[] = [
+// Base symbol patterns (excluding user-configurable emojis)
+export const BASE_SYMBOL_PATTERNS: SymbolSet[] = [
   { full: '★', empty: '☆', half: null },    // Symbols
   { full: '✦', empty: '✧', half: null },    // Star symbols
   { full: '🌕', empty: '🌑', half: '🌗' },   // Moon phases
@@ -33,19 +33,21 @@ export const SYMBOL_PATTERNS: SymbolSet[] = [
   { full: '⬤', empty: '◯', half: null },   // Bold circles
   { full: '⚫', empty: '⚪', half: null },   // Black/white circles
   { full: '█', empty: '░', half: null },    // Block/light shade
-
-  // Full-only symbols (same symbol for full and empty, no half)
-  { full: '🎥', empty: '🎥', half: null },    // Movie cameras
-  { full: '🏆', empty: '🏆', half: null },    // Trophies
-  { full: '⭐', empty: '⭐', half: null },    // Gold stars
-  { full: '💎', empty: '💎', half: null },    // Diamonds
-  { full: '🔥', empty: '🔥', half: null },    // Fire
-  { full: '⚡', empty: '⚡', half: null },    // Lightning
-  { full: '🎯', empty: '🎯', half: null },    // Target/bullseye
-  { full: '🚀', empty: '🚀', half: null },    // Rockets
-  { full: '💰', empty: '💰', half: null },    // Money bags
-  { full: '🎖️', empty: '🎖️', half: null },   // Military medals
 ];
+
+// Mutable symbol patterns - starts with base patterns and user-configurable emojis are added dynamically
+export let SYMBOL_PATTERNS: SymbolSet[] = [
+  ...BASE_SYMBOL_PATTERNS,
+  // User-configurable emojis are added dynamically from settings
+];
+
+/**
+ * Update the global symbol patterns array
+ */
+export function updateSymbolPatterns(newPatterns: SymbolSet[]): void {
+  SYMBOL_PATTERNS.length = 0; // Clear the array
+  SYMBOL_PATTERNS.push(...newPatterns); // Add new patterns
+}
 
 // Interaction constants
 export const INTERACTION_BUFFER = 5; // Buffer for interaction detection

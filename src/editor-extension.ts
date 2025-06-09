@@ -416,10 +416,6 @@ const ratingViewPlugin = ViewPlugin.fromClass(
             const start = match.index;
             const end = start + pattern.length;
             
-            // Skip if too short (minimum 3 symbols) - use Unicode length
-            const unicodeLength = getUnicodeCharLength(pattern);
-            if (unicodeLength < 3) continue;
-            
             const symbolSet = getSymbolSetForPattern(pattern);
             if (!symbolSet) continue;
             
@@ -432,8 +428,11 @@ const ratingViewPlugin = ViewPlugin.fromClass(
             // Check for rating text after the symbols - pass UTF-16 positions
             const ratingText = parseRatingText(text, start, end);
             
-            // For full-only symbols without rating text, they can still be interactive
-            // (rating text will be auto-added on first interaction)
+            // Simple rule: if no rating text, require minimum 3 symbols to avoid false positives
+            const unicodeLength = getUnicodeCharLength(pattern);
+            if (!ratingText && unicodeLength < 3) {
+              continue;
+            }
             
             const actualEnd = ratingText ? ratingText.endPosition : end;
             
@@ -515,6 +514,7 @@ const ratingViewPlugin = ViewPlugin.fromClass(
           const fullOnlyCount = filteredMatches.filter(m => isFullOnlySymbol(m.symbolSet)).length;
           const commentCount = filteredMatches.filter(m => m.ratingText && m.ratingText.format === 'comment-fraction').length;
           const autoAddCandidates = filteredMatches.filter(m => isFullOnlySymbol(m.symbolSet) && !m.ratingText).length;
+          const shortPatternCount = filteredMatches.filter(m => getUnicodeCharLength(m.pattern) < 3).length;
           console.debug(`[InteractiveRatings] Built ${filteredMatches.length - skippedCount}/${filteredMatches.length} rating decorations (${skippedCount} skipped due to cursor proximity)`, {
             cursorPos,
             withRatingText: filteredMatches.filter(m => m.ratingText).length,
@@ -522,7 +522,8 @@ const ratingViewPlugin = ViewPlugin.fromClass(
             withHalfSymbols: filteredMatches.filter(m => m.symbolSet.half).length,
             fullOnlySymbols: fullOnlyCount,
             commentFormatSymbols: commentCount,
-            autoAddCandidates
+            autoAddCandidates,
+            shortPatterns: shortPatternCount
           });
         }
         

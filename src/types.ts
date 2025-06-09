@@ -11,3 +11,7 @@ export interface RatingText {
     text: string;
     endPosition: number;
 }
+
+export interface InteractiveRatingsSettings {
+    supportedEmojis: string;
+}
