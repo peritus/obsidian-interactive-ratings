@@ -145,14 +145,15 @@ export function generateSymbolsStringForDisk(
 }
 
 /**
- * Format the rating text based on the specified format
+ * Format the rating text based on the specified format, including simplified HTML comments
  */
 export function formatRatingText(
   format: string, 
   newRating: number, 
   symbolCount: number, 
   denominator: number, 
-  supportsHalf: boolean
+  supportsHalf: boolean,
+  isFullOnlySymbol: boolean = false
 ): string {
   let newNumerator;
   if (format.includes('percent')) {
@@ -162,6 +163,11 @@ export function formatRatingText(
     if (!supportsHalf) {
       newNumerator = Math.round(newNumerator);
     }
+  }
+
+  // For full-only symbols with HTML comment format, remove comment if perfect rating
+  if (isFullOnlySymbol && format === 'comment-fraction' && newNumerator === denominator) {
+    return ''; // Remove HTML comment for perfect ratings
   }
 
   // Format the text based on the original format
@@ -179,6 +185,10 @@ export function formatRatingText(
     case 'percent-parentheses':
       formattedText = ` (${newNumerator}%)`;
       break;
+    // Simplified HTML comment format (only basic fraction)
+    case 'comment-fraction':
+      formattedText = `<!-- ${newNumerator}/${denominator} -->`;
+      break;
     default:
       formattedText = '';
   }
@@ -190,8 +200,12 @@ export function formatRatingText(
       symbolCount,
       denominator,
       supportsHalf,
+      isFullOnlySymbol,
       newNumerator,
-      formattedText
+      formattedText,
+      isComment: format.startsWith('comment-'),
+      isPerfectRating: newNumerator === denominator,
+      removedComment: isFullOnlySymbol && format === 'comment-fraction' && newNumerator === denominator
     });
   };
 

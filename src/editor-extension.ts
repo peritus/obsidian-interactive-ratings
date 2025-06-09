@@ -19,7 +19,7 @@ interface RatingMatch {
 
 /**
  * Rating widget for inline editing in CodeMirror
- * Handles both symbols and rating text with full half-symbol support and full-only symbols
+ * Handles both symbols and rating text with full half-symbol support, full-only symbols, and simplified HTML comments
  */
 class RatingWidget extends WidgetType {
   constructor(
@@ -44,9 +44,13 @@ class RatingWidget extends WidgetType {
     const isFullOnly = isFullOnlySymbol(this.symbolSet);
     container.setAttribute('data-full-only', isFullOnly.toString());
     
-    // For full-only symbols, use denominator from rating text if available
+    // For full-only symbols, use denominator from rating text if available, otherwise use pattern length
     const displaySymbolCount = (isFullOnly && this.ratingText) ? this.ratingText.denominator : unicodeLength;
     container.setAttribute('data-display-symbol-count', displaySymbolCount.toString());
+    
+    // Check if rating text is HTML comment format (only supported for full-only symbols)
+    const isCommentFormat = isFullOnly && this.ratingText && this.ratingText.format === 'comment-fraction';
+    container.setAttribute('data-comment-format', isCommentFormat ? 'true' : 'false');
     
     // Create symbols container
     const symbolsContainer = document.createElement('span');
@@ -86,8 +90,8 @@ class RatingWidget extends WidgetType {
     
     container.appendChild(symbolsContainer);
     
-    // Create rating text container if rating text exists
-    if (this.ratingText) {
+    // Create rating text container if rating text exists and is not HTML comment format
+    if (this.ratingText && !isCommentFormat) {
       const textContainer = document.createElement('span');
       textContainer.className = 'interactive-rating-text';
       textContainer.textContent = this.ratingText.text;
@@ -172,6 +176,7 @@ class RatingWidget extends WidgetType {
     
     const spans = symbolsContainer.querySelectorAll('span');
     const isFullOnly = isFullOnlySymbol(this.symbolSet);
+    const isCommentFormat = isFullOnly && this.ratingText && this.ratingText.format === 'comment-fraction';
     
     spans.forEach((span, index) => {
       const symbolRating = index + 1;
@@ -208,8 +213,8 @@ class RatingWidget extends WidgetType {
       }
     });
     
-    // Preview rating text if it exists
-    if (this.ratingText) {
+    // Preview rating text if it exists and is not HTML comment format
+    if (this.ratingText && !isCommentFormat) {
       const textContainer = container.querySelector('.interactive-rating-text');
       if (textContainer) {
         const previewText = formatRatingText(
@@ -217,17 +222,19 @@ class RatingWidget extends WidgetType {
           newRating,
           this.ratingText.denominator, // Use original denominator
           this.ratingText.denominator,
-          !!this.symbolSet.half && !isFullOnly
+          !!this.symbolSet.half && !isFullOnly,
+          isFullOnly
         );
         textContainer.textContent = previewText;
       }
     }
     
     if (LOGGING_ENABLED) {
-      console.debug('[InteractiveRatings] Preview rating with full-only support', {
+      console.debug('[InteractiveRatings] Preview rating with simplified comment format support', {
         newRating,
         hasHalf: !!this.symbolSet.half,
         isFullOnly,
+        isCommentFormat,
         symbolSet: this.symbolSet,
         denominator: this.ratingText?.denominator
       });
@@ -243,6 +250,7 @@ class RatingWidget extends WidgetType {
     
     const spans = symbolsContainer.querySelectorAll('span');
     const isFullOnly = isFullOnlySymbol(this.symbolSet);
+    const isCommentFormat = isFullOnly && this.ratingText && this.ratingText.format === 'comment-fraction';
     
     spans.forEach((span, index) => {
       const symbolRating = index + 1;
@@ -276,8 +284,8 @@ class RatingWidget extends WidgetType {
       }
     });
     
-    // Restore original rating text
-    if (this.ratingText) {
+    // Restore original rating text (only if not HTML comment format)
+    if (this.ratingText && !isCommentFormat) {
       const textContainer = container.querySelector('.interactive-rating-text');
       if (textContainer) {
         textContainer.textContent = this.ratingText.text;
@@ -285,10 +293,11 @@ class RatingWidget extends WidgetType {
     }
     
     if (LOGGING_ENABLED) {
-      console.debug('[InteractiveRatings] Render rating with full-only support', {
+      console.debug('[InteractiveRatings] Render rating with simplified comment format support', {
         rating,
         hasHalf: !!this.symbolSet.half,
         isFullOnly,
+        isCommentFormat,
         symbolSet: this.symbolSet
       });
     }
@@ -300,11 +309,12 @@ class RatingWidget extends WidgetType {
   private updateRating(view: EditorView, newRating: number): void {
     try {
       const isFullOnly = isFullOnlySymbol(this.symbolSet);
+      const unicodeLength = getUnicodeCharLength(this.pattern);
       
       // For full-only symbols, use the disk-safe function that only includes rated symbols
       const newSymbols = generateSymbolsStringForDisk(
         newRating,
-        getUnicodeCharLength(this.pattern),
+        unicodeLength,
         this.symbolSet.full,
         this.symbolSet.empty,
         this.symbolSet.half || '',
@@ -312,15 +322,27 @@ class RatingWidget extends WidgetType {
         this.symbolSet
       );
       
-      // Generate new rating text if it exists
+      // Generate new rating text
       let newText = newSymbols;
+      let newRatingFormat = '';
+      
       if (this.ratingText) {
+        // Use existing rating text format
+        newRatingFormat = this.ratingText.format;
+      } else if (isFullOnly) {
+        // Auto-add HTML comment rating text for full-only symbols without rating text
+        newRatingFormat = 'comment-fraction';
+      }
+      
+      if (newRatingFormat) {
+        const denominator = this.ratingText ? this.ratingText.denominator : unicodeLength;
         const newRatingText = formatRatingText(
-          this.ratingText.format,
+          newRatingFormat,
           newRating,
-          this.ratingText.denominator, // Use original denominator
-          this.ratingText.denominator,
-          !!this.symbolSet.half && !isFullOnly
+          denominator,
+          denominator,
+          !!this.symbolSet.half && !isFullOnly,
+          isFullOnly
         );
         newText = newSymbols + newRatingText;
       }
@@ -335,7 +357,7 @@ class RatingWidget extends WidgetType {
       });
       
       if (LOGGING_ENABLED) {
-        console.info('[InteractiveRatings] Rating updated in editor with full-only support', {
+        console.info('[InteractiveRatings] Rating updated with auto-add HTML comment support', {
           oldRating: this.rating,
           newRating,
           newSymbols,
@@ -343,7 +365,9 @@ class RatingWidget extends WidgetType {
           hasRatingText: !!this.ratingText,
           hasHalf: !!this.symbolSet.half,
           isFullOnly,
-          originalDenominator: this.ratingText?.denominator,
+          autoAddedComment: !this.ratingText && isFullOnly,
+          newRatingFormat,
+          denominator: this.ratingText ? this.ratingText.denominator : unicodeLength,
           position: { from: this.startPos, to: this.endPos }
         });
       }
@@ -408,16 +432,8 @@ const ratingViewPlugin = ViewPlugin.fromClass(
             // Check for rating text after the symbols - pass UTF-16 positions
             const ratingText = parseRatingText(text, start, end);
             
-            // For full-only symbols, rating text is highly recommended
-            if (isFullOnly && !ratingText) {
-              if (LOGGING_ENABLED) {
-                console.debug('[InteractiveRatings] Skipping full-only symbol without rating text', {
-                  pattern,
-                  symbolSet
-                });
-              }
-              continue;
-            }
+            // For full-only symbols without rating text, they can still be interactive
+            // (rating text will be auto-added on first interaction)
             
             const actualEnd = ratingText ? ratingText.endPosition : end;
             
@@ -432,7 +448,9 @@ const ratingViewPlugin = ViewPlugin.fromClass(
                 hasRatingText: !!ratingText,
                 ratingTextDetails: ratingText,
                 symbolSet: symbolSet,
-                isFullOnly
+                isFullOnly,
+                isCommentFormat: ratingText && ratingText.format === 'comment-fraction',
+                canAutoAddComment: isFullOnly && !ratingText
               });
             }
             
@@ -495,12 +513,16 @@ const ratingViewPlugin = ViewPlugin.fromClass(
             cursorPos >= m.start - 1 && cursorPos <= m.end + 1
           ).length;
           const fullOnlyCount = filteredMatches.filter(m => isFullOnlySymbol(m.symbolSet)).length;
+          const commentCount = filteredMatches.filter(m => m.ratingText && m.ratingText.format === 'comment-fraction').length;
+          const autoAddCandidates = filteredMatches.filter(m => isFullOnlySymbol(m.symbolSet) && !m.ratingText).length;
           console.debug(`[InteractiveRatings] Built ${filteredMatches.length - skippedCount}/${filteredMatches.length} rating decorations (${skippedCount} skipped due to cursor proximity)`, {
             cursorPos,
             withRatingText: filteredMatches.filter(m => m.ratingText).length,
             symbolsOnly: filteredMatches.filter(m => !m.ratingText).length,
             withHalfSymbols: filteredMatches.filter(m => m.symbolSet.half).length,
-            fullOnlySymbols: fullOnlyCount
+            fullOnlySymbols: fullOnlyCount,
+            commentFormatSymbols: commentCount,
+            autoAddCandidates
           });
         }
         

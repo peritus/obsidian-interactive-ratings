@@ -3,7 +3,7 @@ import { RatingText, SymbolSet } from './types';
 import { getUnicodeCharLength, getUnicodeSubstring, utf16ToUnicodePosition } from './utils';
 
 /**
- * Parse rating text from a line
+ * Parse rating text from a line, including HTML comment formats with precedence
  * @param line The full line of text
  * @param utf16Start UTF-16 byte position where symbols start
  * @param utf16End UTF-16 byte position where symbols end
@@ -22,55 +22,93 @@ export function parseRatingText(line: string, utf16Start: number, utf16End: numb
       utf16End,
       unicodeStart,
       unicodeEnd,
-      afterSymbols: afterSymbols.substring(0, 20) + '...',
+      afterSymbols: afterSymbols.substring(0, 40) + '...',
       lineLength: line.length,
       unicodeLineLength: getUnicodeCharLength(line)
     });
   }
 
-  // Check for rating patterns
+  // Check for regular rating patterns first (takes precedence over HTML comments)
   const ratingTextMatch = afterSymbols.match(/^\s*(?:\(([\d\.]+)\/(\d+)\)|([\d\.]+)\/(\d+)|(?:\()?(\d+)%(?:\))?)/);
+  
+  // Check for simplified HTML comment rating patterns (only basic fraction format)
+  const commentMatch = afterSymbols.match(/^\s*<!--\s*([\d\.]+)\/(\d+)\s*-->/);
+
+  // Look for both formats to handle precedence properly
+  let visibleMatch = null;
+  let htmlCommentMatch = null;
+  let totalMatchLength = 0;
 
   if (ratingTextMatch) {
+    visibleMatch = ratingTextMatch;
+    totalMatchLength = ratingTextMatch[0].length;
+    
+    // Check if there's also an HTML comment after the visible rating
+    const afterVisible = afterSymbols.substring(ratingTextMatch[0].length);
+    const followingCommentMatch = afterVisible.match(/^\s*<!--\s*([\d\.]+)\/(\d+)\s*-->/);
+    if (followingCommentMatch) {
+      htmlCommentMatch = followingCommentMatch;
+      totalMatchLength += followingCommentMatch[0].length;
+    }
+  } else if (commentMatch) {
+    htmlCommentMatch = commentMatch;
+    totalMatchLength = commentMatch[0].length;
+  }
+
+  // Use visible rating if present, otherwise use comment
+  const match = visibleMatch || htmlCommentMatch;
+  const isComment = !visibleMatch && !!htmlCommentMatch;
+  const hasBothFormats = !!(visibleMatch && htmlCommentMatch);
+
+  if (match) {
     let format = '';
     let numerator = 0;
     let denominator = 0;
 
-    if (ratingTextMatch[1] && ratingTextMatch[2]) {
+    if (isComment && htmlCommentMatch) {
+      // Simplified HTML comment format: <!-- 3/5 -->
+      format = 'comment-fraction';
+      numerator = parseFloat(htmlCommentMatch[1]);
+      denominator = parseInt(htmlCommentMatch[2]);
+    } else if (match[1] && match[2]) {
       // (14.5/33) format
       format = 'fraction-parentheses';
-      numerator = parseFloat(ratingTextMatch[1]);
-      denominator = parseInt(ratingTextMatch[2]);
-    } else if (ratingTextMatch[3] && ratingTextMatch[4]) {
+      numerator = parseFloat(match[1]);
+      denominator = parseInt(match[2]);
+    } else if (match[3] && match[4]) {
       // 14.5/33 format
       format = 'fraction';
-      numerator = parseFloat(ratingTextMatch[3]);
-      denominator = parseInt(ratingTextMatch[4]);
-    } else if (ratingTextMatch[5]) {
+      numerator = parseFloat(match[3]);
+      denominator = parseInt(match[4]);
+    } else if (match[5]) {
       // 60% or (60%) format
-      format = afterSymbols.includes('(') ? 'percent-parentheses' : 'percent';
-      numerator = parseInt(ratingTextMatch[5]);
+      const hasParens = match[0].includes('(') && match[0].includes(')');
+      format = hasParens ? 'percent-parentheses' : 'percent';
+      numerator = parseInt(match[5]);
       denominator = 100;
     }
 
-    // Calculate the end position correctly - convert back to UTF-16 position
-    // We need to find where this rating text ends in the original UTF-16 string
-    const ratingTextLength = ratingTextMatch[0].length;
-    const endPosition = utf16End + ratingTextMatch[0].length;
+    // Calculate the end position correctly - use total length when both formats present
+    const endPosition = utf16End + totalMatchLength;
 
     const result: RatingText = {
       format,
       numerator,
       denominator,
-      text: ratingTextMatch[0],
+      text: match[0],
       endPosition: endPosition
     };
 
     if (LOGGING_ENABLED) {
       console.debug('[InteractiveRatings] Found rating text', {
         result,
-        matchedText: ratingTextMatch[0],
-        ratingTextLength,
+        matchedText: match[0],
+        isComment,
+        hasPrecedence: !isComment,
+        hasBothFormats,
+        visibleMatchLength: visibleMatch ? visibleMatch[0].length : 0,
+        commentMatchLength: htmlCommentMatch ? htmlCommentMatch[0].length : 0,
+        totalMatchLength,
         calculatedEndPosition: endPosition
       });
     }
