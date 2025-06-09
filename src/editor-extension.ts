@@ -1,7 +1,7 @@
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 import { generateSymbolRegexPatterns, getSymbolSetForPattern, calculateRating, parseRatingText } from './ratings-parser';
-import { generateSymbolsString, formatRatingText } from './utils';
+import { generateSymbolsString, formatRatingText, getUnicodeCharLength, utf16ToUnicodePosition } from './utils';
 import { LOGGING_ENABLED } from './constants';
 import { RatingText } from './types';
 
@@ -37,7 +37,8 @@ class RatingWidget extends WidgetType {
     const container = document.createElement('span');
     container.className = 'interactive-rating-editor-widget';
     container.setAttribute('data-rating', this.rating.toString());
-    container.setAttribute('data-pattern-length', this.pattern.length.toString());
+    const unicodeLength = getUnicodeCharLength(this.pattern);
+    container.setAttribute('data-pattern-length', unicodeLength.toString());
     container.setAttribute('data-supports-half', (!!this.symbolSet.half).toString());
     
     // Create symbols container
@@ -169,12 +170,13 @@ class RatingWidget extends WidgetType {
     if (this.ratingText) {
       const textContainer = container.querySelector('.interactive-rating-text');
       if (textContainer) {
-        // Use the current pattern length as the denominator for preview
+        // Use the Unicode character count as the denominator for preview
+        const unicodeLength = getUnicodeCharLength(this.pattern);
         const previewText = formatRatingText(
           this.ratingText.format,
           newRating,
-          this.pattern.length,
-          this.pattern.length, // Use symbol count as denominator
+          unicodeLength,
+          unicodeLength, // Use symbol count as denominator
           !!this.symbolSet.half
         );
         textContainer.textContent = previewText;
@@ -186,7 +188,7 @@ class RatingWidget extends WidgetType {
         newRating,
         hasHalf: !!this.symbolSet.half,
         symbolSet: this.symbolSet,
-        denominator: this.pattern.length
+        denominator: getUnicodeCharLength(this.pattern)
       });
     }
   }
@@ -237,10 +239,13 @@ class RatingWidget extends WidgetType {
    */
   private updateRating(view: EditorView, newRating: number): void {
     try {
+      // Use Unicode character count for proper emoji handling
+      const unicodeLength = getUnicodeCharLength(this.pattern);
+      
       // Generate new symbol string with half-symbol support
       const newSymbols = generateSymbolsString(
         newRating,
-        this.pattern.length,
+        unicodeLength,
         this.symbolSet.full,
         this.symbolSet.empty,
         this.symbolSet.half || '',
@@ -250,12 +255,12 @@ class RatingWidget extends WidgetType {
       // Generate new rating text if it exists
       let newText = newSymbols;
       if (this.ratingText) {
-        // Use the current pattern length as the denominator for final update
+        // Use the Unicode character count as the denominator for final update
         const newRatingText = formatRatingText(
           this.ratingText.format,
           newRating,
-          this.pattern.length,
-          this.pattern.length, // Use symbol count as denominator
+          unicodeLength,
+          unicodeLength, // Use symbol count as denominator
           !!this.symbolSet.half
         );
         newText = newSymbols + newRatingText;
@@ -279,7 +284,9 @@ class RatingWidget extends WidgetType {
           hasRatingText: !!this.ratingText,
           hasHalf: !!this.symbolSet.half,
           oldDenominator: this.ratingText?.denominator,
-          newDenominator: this.pattern.length,
+          newDenominator: unicodeLength,
+          unicodeLengthCalculated: unicodeLength,
+          rawPatternLength: this.pattern.length,
           position: { from: this.startPos, to: this.endPos }
         });
       }
@@ -328,17 +335,32 @@ const ratingViewPlugin = ViewPlugin.fromClass(
             const start = match.index;
             const end = start + pattern.length;
             
-            // Skip if too short (minimum 3 symbols)
-            if (pattern.length < 3) continue;
+            // Skip if too short (minimum 3 symbols) - use Unicode length
+            const unicodeLength = getUnicodeCharLength(pattern);
+            if (unicodeLength < 3) continue;
             
             const symbolSet = getSymbolSetForPattern(pattern);
             if (!symbolSet) continue;
             
             const rating = calculateRating(pattern, symbolSet);
             
-            // Check for rating text after the symbols
+            // Check for rating text after the symbols - pass UTF-16 positions
             const ratingText = parseRatingText(text, start, end);
             const actualEnd = ratingText ? ratingText.endPosition : end;
+            
+            if (LOGGING_ENABLED) {
+              console.debug('[InteractiveRatings] Found rating match', {
+                pattern,
+                start,
+                end,
+                actualEnd,
+                unicodeLength,
+                rating,
+                hasRatingText: !!ratingText,
+                ratingTextDetails: ratingText,
+                symbolSet: symbolSet
+              });
+            }
             
             matches.push({
               pattern,

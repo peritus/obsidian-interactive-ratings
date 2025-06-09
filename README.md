@@ -33,6 +33,7 @@ The numerical rating updates automatically when you change the symbols.
 |-------------|------|-------|------|----------|
 | Stars | ★ | ☆ |  | `★★★☆☆ (3/5)` Book rating |
 | Star Symbols | ✦ | ✧ |  | `✦✦✦✧✧ (3/5)` Stargazing |
+| Moon Phases | 🌕 | 🌑 | 🌗 | `🌕🌕🌗🌑🌑 (2.5/5)` Lunar observation |
 | Circles | ● | ○ | ◐ | `●●●○○○○○○○ 3/10` Movie review scale |
 | Squares | ■ | □ | ◧ | `■■■□ (3/4)` Recipe difficulty |
 | Triangles | ▲ | △ |  | `▲▲▲▲▲△△△△△△△ 5/12` Hiking difficulty |
