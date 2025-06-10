@@ -1,4 +1,5 @@
-import { Decoration, RangeSetBuilder } from "@codemirror/view";
+import { Decoration } from "@codemirror/view";
+import { RangeSetBuilder } from "@codemirror/state";
 import { getUnicodeCharLength } from '../../utils/getUnicodeCharLength';
 import { isFullOnlySymbol } from '../../utils/isFullOnlySymbol';
 import { LOGGING_ENABLED } from '../../constants';

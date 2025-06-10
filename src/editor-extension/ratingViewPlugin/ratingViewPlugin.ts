@@ -1,4 +1,4 @@
-import { EditorView, DecorationSet, ViewPlugin, ViewUpdate } from "@codemirror/view";
+import { EditorView, DecorationSet, ViewPlugin, ViewUpdate, Decoration } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 import { LOGGING_ENABLED } from '../../constants';
 import { collectMatches } from './collectMatches';
@@ -23,7 +23,7 @@ export const ratingViewPlugin = ViewPlugin.fromClass(
     }
 
     buildDecorations(view: EditorView): DecorationSet {
-      const builder = new RangeSetBuilder();
+      const builder = new RangeSetBuilder<Decoration>();
       
       try {
         const text = view.state.doc.toString();
