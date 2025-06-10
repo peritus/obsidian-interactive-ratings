@@ -2,44 +2,8 @@
 
 Add interactive rating symbols to your notes that update with a click.
 
-## Usage
-
 <img alt="demo of the Interactive Ratings Plugin for Obsidian" src="screencast.gif" width="400" />
 
-Type any supported symbol sequence (minimum 3 identical symbols) in your note. When you hover over these symbols in edit mode, clicking on one of the symbols allowing you to update the rating.
-
-## Installation
-
-1. In Obsidian settings, go to Community Plugins
-2. Disable Safe Mode
-3. Search for "Interactive Ratings"
-4. Install and enable the plugin
-
-## Configuration
-
-### Custom Emojis
-
-You can configure which emojis are supported for rating interactions by going to Settings → Community Plugins → Interactive Ratings. In the "Emojis to support in ratings" setting, enter any emojis you want to use for ratings.
-
-**Default emojis**: `🎥🏆⭐💎🔥⚡🎯🚀💰🎖️`
-
-**Example usage**:
-- `🎥🎥🎥🎥🎥 (4/5)` Movie rating
-- `🏆🏆🏆 3/5` Achievement level  
-- `🔥🔥🔥🔥 80%` Spice level
-- `🎯🎯🎯🎯🎯🎯 (5/6)` Accuracy rating
-
-### Rating Text (optional)
-
-Add numerical ratings with these formats:
-
-- `★★★☆☆` - Only symbols, no rating text
-- `★★★☆☆ 3/5` - Fraction without parentheses
-- `★★★☆☆ (3/5)` - Fraction in parentheses
-- `★★★☆☆ 60%` - Percentage
-- `★★★☆☆ (60%)` - Percentage in parentheses
-
-The numerical rating updates automatically when you change the symbols.
 
 ## Supported Symbol Sets
 
@@ -69,6 +33,43 @@ The numerical rating updates automatically when you change the symbols.
 | Bold Circles | ⬤ | ◯ | | `⬤◯◯ 1/3` Quick product review |
 | Black/White Circles | ⚫ | ⚪ | | `⚫⚫⚫⚫⚫⚪⚪⚪⚪⚪ (5/10)` Coffee strength |
 | Block/Light Shade | █ | ░ | | `███░░░░░░░ 30%` Download progress |
+
+## Usage
+
+Type any supported symbol sequence (minimum 3 identical symbols) in your note. When you hover over these symbols in edit mode, clicking on one of the symbols allowing you to update the rating.
+
+### Rating Text (optional)
+
+Add numerical ratings with these formats:
+
+- `★★★☆☆` - Only symbols, no rating text
+- `★★★☆☆ 3/5` - Fraction without parentheses
+- `★★★☆☆ (3/5)` - Fraction in parentheses
+- `★★★☆☆ 60%` - Percentage
+- `★★★☆☆ (60%)` - Percentage in parentheses
+
+The numerical rating updates automatically when you change the symbols.
+
+### Custom Emojis
+
+You can configure which emojis are supported for rating interactions by going to Settings → Community Plugins → Interactive Ratings. In the "Emojis to support in ratings" setting, enter any emojis you want to use for ratings.
+
+**Default emojis**: `🎥🏆⭐💎🔥⚡🎯🚀💰🎖️`
+
+**Example usage**:
+- `🎥🎥🎥🎥🎥 (4/5)` Movie rating
+- `🏆🏆🏆 3/5` Achievement level  
+- `🔥🔥🔥🔥 80%` Spice level
+- `🎯🎯🎯🎯🎯🎯 (5/6)` Accuracy rating
+
+
+## Installation
+
+1. In Obsidian settings, go to Community Plugins
+2. Disable Safe Mode
+3. Search for "Interactive Ratings"
+4. Install and enable the plugin
+
 
 ## Use Cases
 
