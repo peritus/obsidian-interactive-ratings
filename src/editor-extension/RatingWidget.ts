@@ -206,11 +206,12 @@ export class RatingWidget extends WidgetType {
     if (this.ratingText && !isCommentFormat) {
       const textContainer = container.querySelector('.interactive-rating-text');
       if (textContainer) {
+        const unicodeLength = getUnicodeCharLength(this.pattern);
         const previewText = formatRatingText(
           this.ratingText.format,
           newRating,
-          this.ratingText.denominator, // Use original denominator
-          this.ratingText.denominator,
+          unicodeLength, // Always use actual pattern length for percentage calculations
+          this.ratingText.denominator, // Use original denominator for fraction displays
           !!this.symbolSet.half && !isFullOnly,
           isFullOnly
         );
@@ -328,8 +329,8 @@ export class RatingWidget extends WidgetType {
         const newRatingText = formatRatingText(
           newRatingFormat,
           newRating,
-          denominator,
-          denominator,
+          unicodeLength, // Always use actual pattern length for percentage calculations
+          denominator, // Use original denominator for fraction displays
           !!this.symbolSet.half && !isFullOnly,
           isFullOnly
         );
