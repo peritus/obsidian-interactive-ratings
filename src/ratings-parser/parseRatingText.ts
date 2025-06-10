@@ -1,6 +1,6 @@
-import { LOGGING_ENABLED, SYMBOL_PATTERNS } from './constants';
-import { RatingText, SymbolSet } from './types';
-import { getUnicodeCharLength, getUnicodeSubstring, utf16ToUnicodePosition } from './utils';
+import { LOGGING_ENABLED } from '../constants';
+import { RatingText } from '../types';
+import { getUnicodeCharLength, getUnicodeSubstring, utf16ToUnicodePosition } from '../utils';
 
 /**
  * Parse rating text from a line, including HTML comment formats with precedence
@@ -117,80 +117,4 @@ export function parseRatingText(line: string, utf16Start: number, utf16End: numb
   }
 
   return null;
-}
-
-/**
- * Get the appropriate symbol set for a given rating pattern
- */
-export function getSymbolSetForPattern(pattern: string): SymbolSet | null {
-  // Find the symbol set that matches the pattern
-  for (const symbolSet of SYMBOL_PATTERNS) {
-    if (pattern.includes(symbolSet.full) || pattern.includes(symbolSet.empty) ||
-      (symbolSet.half && pattern.includes(symbolSet.half))) {
-      return symbolSet;
-    }
-  }
-  return null;
-}
-
-/**
- * Calculate the rating value from a pattern string
- */
-export function calculateRating(pattern: string, symbolSet: SymbolSet): number {
-  let rating = 0;
-  // Use array spread to properly iterate over Unicode characters
-  for (const char of [...pattern]) {
-    if (char === symbolSet.full) rating += 1.0;
-    else if (symbolSet.half && char === symbolSet.half) rating += 0.5;
-  }
-
-  if (LOGGING_ENABLED) {
-    console.debug(`[InteractiveRatings] Calculated pattern rating`, {
-      pattern,
-      full: symbolSet.full,
-      empty: symbolSet.empty,
-      half: symbolSet.half,
-      rating
-    });
-  };
-
-  return rating;
-}
-
-/**
- * Escape special regex characters, handling Unicode properly
- */
-function escapeRegexChar(char: string): string {
-  return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * Generate regex patterns for detecting rating symbols in text
- * Fixed to handle multibyte Unicode characters (emojis) properly
- * Now supports 1+ symbols to detect low ratings
- */
-export function generateSymbolRegexPatterns(): RegExp[] {
-  return SYMBOL_PATTERNS.map(symbols => {
-    // Build alternation pattern instead of character class for emoji support
-    const symbolChars = [symbols.full, symbols.empty];
-    if (symbols.half) {
-      symbolChars.push(symbols.half);
-    }
-    
-    // Escape each symbol for regex and create alternation
-    const escapedSymbols = symbolChars.map(escapeRegexChar);
-    // Changed from {3,} to {1,} to detect single symbols (fixes low rating bug)
-    const pattern = `(?:${escapedSymbols.join('|')})+`;
-    
-    if (LOGGING_ENABLED) {
-      console.debug(`[InteractiveRatings] Generated regex pattern for symbol set`, {
-        symbolSet: symbols,
-        pattern,
-        escapedSymbols,
-        allowsSingleSymbol: true
-      });
-    }
-    
-    return new RegExp(pattern, 'g');
-  });
 }
