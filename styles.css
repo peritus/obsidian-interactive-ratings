@@ -38,6 +38,32 @@
   color: inherit;
 }
 
+/* Base symbol styling */
+.interactive-rating-symbol {
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+/* Active/rated symbol state */
+.interactive-rating-symbol--rated {
+  opacity: 1;
+  filter: none;
+}
+
+/* Inactive/unrated symbol state (for full-only symbols) */
+.interactive-rating-symbol--unrated {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+/* Normal symbol state (for regular symbols) */
+.interactive-rating-symbol--normal {
+  opacity: 1;
+  filter: none;
+}
+
 /* Individual symbol spans in editor widget with half-symbol support */
 .interactive-rating-editor-widget .interactive-rating-symbols span {
   position: relative;
@@ -80,14 +106,14 @@
   transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-/* Ensure full-only unrated symbols are properly grayed out */
-.interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbols span[style*="opacity: 0.5"] {
+/* Ensure full-only unrated symbols are properly grayed out - using class-based approach */
+.interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbol--unrated {
   opacity: 0.5 !important;
   filter: grayscale(100%) !important;
 }
 
-/* Ensure full-only rated symbols are fully visible */
-.interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbols span[style*="opacity: 1"] {
+/* Ensure full-only rated symbols are fully visible - using class-based approach */
+.interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbol--rated {
   opacity: 1 !important;
   filter: none !important;
 }
@@ -120,8 +146,8 @@
     /* No visual elements */
   }
 
-  /* Enhanced contrast for full-only symbols */
-  .interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbols span[style*="opacity: 0.5"] {
+  /* Enhanced contrast for full-only symbols using class-based approach */
+  .interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbol--unrated {
     opacity: 0.3 !important;
     filter: grayscale(100%) contrast(0.7) !important;
   }
@@ -132,7 +158,8 @@
   .interactive-rating-editor-widget,
   .interactive-rating-editor-widget .interactive-rating-symbols span,
   .interactive-rating-editor-widget .interactive-rating-symbols span::before,
-  .interactive-rating-editor-widget .interactive-rating-symbols span::after {
+  .interactive-rating-editor-widget .interactive-rating-symbols span::after,
+  .interactive-rating-symbol {
     transition: none;
   }
 }

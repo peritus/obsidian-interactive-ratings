@@ -49,8 +49,7 @@ export class RatingWidget extends WidgetType {
     for (let i = 0; i < displaySymbolCount; i++) {
       const span = document.createElement('span');
       span.textContent = this.symbolSet.full;
-      span.style.cursor = 'pointer';
-      span.style.position = 'relative';
+      span.className = 'interactive-rating-symbol';
       span.setAttribute('data-symbol-index', i.toString());
       
       // Add click handler with full-only validation
@@ -157,6 +156,17 @@ export class RatingWidget extends WidgetType {
   }
 
   /**
+   * Apply the appropriate CSS class to a symbol based on its state
+   */
+  private applySymbolState(span: HTMLElement, state: 'rated' | 'unrated' | 'normal'): void {
+    // Remove all state classes
+    span.classList.remove('interactive-rating-symbol--rated', 'interactive-rating-symbol--unrated', 'interactive-rating-symbol--normal');
+    
+    // Add the appropriate state class
+    span.classList.add(`interactive-rating-symbol--${state}`);
+  }
+
+  /**
    * Preview rating with proper half-symbol rendering and full-only symbol support
    */
   private previewRating(newRating: number, container: HTMLElement): void {
@@ -175,29 +185,24 @@ export class RatingWidget extends WidgetType {
         // For full-only symbols: show full symbol for rated, grey for unrated
         span.textContent = this.symbolSet.full;
         if (symbolRating <= newRating) {
-          span.style.opacity = '1';
-          span.style.filter = 'none';
+          this.applySymbolState(span, 'rated');
         } else {
-          span.style.opacity = '0.5';
-          span.style.filter = 'grayscale(100%)';
+          this.applySymbolState(span, 'unrated');
         }
       } else {
         // Regular symbol behavior
         if (symbolRating <= newRating) {
           // Full symbol
           span.textContent = this.symbolSet.full;
-          span.style.opacity = '1';
-          span.style.filter = 'none';
+          this.applySymbolState(span, 'normal');
         } else if (this.symbolSet.half && halfRating <= newRating && halfRating > newRating - 0.5) {
           // Half symbol
           span.textContent = this.symbolSet.half;
-          span.style.opacity = '1';
-          span.style.filter = 'none';
+          this.applySymbolState(span, 'normal');
         } else {
           // Empty symbol
           span.textContent = this.symbolSet.empty;
-          span.style.opacity = '1';
-          span.style.filter = 'none';
+          this.applySymbolState(span, 'normal');
         }
       }
     });
@@ -250,11 +255,9 @@ export class RatingWidget extends WidgetType {
         // For full-only symbols: show full symbol for rated, grey for unrated
         span.textContent = this.symbolSet.full;
         if (symbolRating <= rating) {
-          span.style.opacity = '1';
-          span.style.filter = 'none';
+          this.applySymbolState(span, 'rated');
         } else {
-          span.style.opacity = '0.5';
-          span.style.filter = 'grayscale(100%)';
+          this.applySymbolState(span, 'unrated');
         }
       } else {
         // Regular symbol behavior
@@ -268,9 +271,8 @@ export class RatingWidget extends WidgetType {
           // Empty symbol
           span.textContent = this.symbolSet.empty;
         }
-        // Reset any styling for regular symbols
-        span.style.opacity = '1';
-        span.style.filter = 'none';
+        // Apply normal state for regular symbols
+        this.applySymbolState(span, 'normal');
       }
     });
     
