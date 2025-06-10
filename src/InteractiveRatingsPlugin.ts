@@ -1,6 +1,6 @@
 import { Plugin } from 'obsidian';
 import { LOGGING_ENABLED } from './constants';
-import { ratingEditorExtension } from './editor-extension/ratingViewPlugin';
+import { ratingEditorExtension } from './editor-extension/ratingViewPlugin/ratingViewPlugin';
 import { InteractiveRatingsSettings } from './types';
 import { DEFAULT_SETTINGS, InteractiveRatingsSettingTab } from './settings';
 import { updateSymbolPatternsFromSettings } from './utils/updateSymbolPatternsFromSettings';

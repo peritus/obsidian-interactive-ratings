@@ -1,7 +1,7 @@
 import { generateSymbolRegexPatterns } from '../../ratings-parser/generateSymbolRegexPatterns';
 import { getSymbolSetForPattern } from '../../ratings-parser/getSymbolSetForPattern';
 import { calculateRating } from '../../ratings-parser/calculateRating';
-import { parseRatingText } from '../../ratings-parser/parseRatingText';
+import { parseRatingText } from '../../ratings-parser/parseRatingText/parseRatingText';
 import { getUnicodeCharLength } from '../../utils/getUnicodeCharLength';
 import { isFullOnlySymbol } from '../../utils/isFullOnlySymbol';
 import { LOGGING_ENABLED } from '../../constants';

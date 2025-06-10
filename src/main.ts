@@ -16,15 +16,15 @@ export { formatRatingText } from './utils/formatRatingText';
 export { updateSymbolPatternsFromSettings } from './utils/updateSymbolPatternsFromSettings';
 
 // Re-export from ratings-parser
-export { parseRatingText } from './ratings-parser/parseRatingText';
+export { parseRatingText } from './ratings-parser/parseRatingText/parseRatingText';
 export { getSymbolSetForPattern } from './ratings-parser/getSymbolSetForPattern';
 export { calculateRating } from './ratings-parser/calculateRating';
 export { escapeRegexChar } from './ratings-parser/escapeRegexChar';
 export { generateSymbolRegexPatterns } from './ratings-parser/generateSymbolRegexPatterns';
 
 // Re-export from editor-extension
-export { ratingViewPlugin, ratingEditorExtension } from './editor-extension/ratingViewPlugin';
-export { RatingWidget } from './editor-extension/RatingWidget';
+export { ratingViewPlugin, ratingEditorExtension } from './editor-extension/ratingViewPlugin/ratingViewPlugin';
+export { RatingWidget } from './editor-extension/RatingWidget/RatingWidget';
 export { RatingMatch } from './editor-extension/RatingMatch';
 
 // Export the main plugin class
