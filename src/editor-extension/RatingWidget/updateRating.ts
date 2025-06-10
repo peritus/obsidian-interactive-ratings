@@ -68,6 +68,9 @@ export function updateRating(
       }
     });
     
+    // Prevent keyboard from appearing on mobile by blurring the editor
+    view.contentDOM.blur();
+    
     if (LOGGING_ENABLED) {
       console.info('[InteractiveRatings] Rating updated with auto-add HTML comment support', {
         oldRating: rating,
