@@ -1,5 +1,8 @@
 import { EditorView, WidgetType } from "@codemirror/view";
-import { generateSymbolsStringForDisk, formatRatingText, getUnicodeCharLength, isFullOnlySymbol } from '../utils';
+import { generateSymbolsStringForDisk } from '../utils/generateSymbolsStringForDisk';
+import { formatRatingText } from '../utils/formatRatingText';
+import { getUnicodeCharLength } from '../utils/getUnicodeCharLength';
+import { isFullOnlySymbol } from '../utils/isFullOnlySymbol';
 import { LOGGING_ENABLED } from '../constants';
 import { RatingText } from '../types';
 

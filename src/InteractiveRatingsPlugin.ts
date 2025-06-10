@@ -1,9 +1,9 @@
 import { Plugin } from 'obsidian';
 import { LOGGING_ENABLED } from './constants';
-import { ratingEditorExtension } from './editor-extension';
+import { ratingEditorExtension } from './editor-extension/ratingViewPlugin';
 import { InteractiveRatingsSettings } from './types';
 import { DEFAULT_SETTINGS, InteractiveRatingsSettingTab } from './settings';
-import { updateSymbolPatternsFromSettings } from './utils';
+import { updateSymbolPatternsFromSettings } from './utils/updateSymbolPatternsFromSettings';
 
 export class InteractiveRatingsPlugin extends Plugin {
   settings: InteractiveRatingsSettings;

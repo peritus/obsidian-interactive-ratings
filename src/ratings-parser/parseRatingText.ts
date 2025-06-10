@@ -1,6 +1,8 @@
 import { LOGGING_ENABLED } from '../constants';
 import { RatingText } from '../types';
-import { getUnicodeCharLength, getUnicodeSubstring, utf16ToUnicodePosition } from '../utils';
+import { getUnicodeCharLength } from '../utils/getUnicodeCharLength';
+import { getUnicodeSubstring } from '../utils/getUnicodeSubstring';
+import { utf16ToUnicodePosition } from '../utils/utf16ToUnicodePosition';
 
 /**
  * Parse rating text from a line, including HTML comment formats with precedence

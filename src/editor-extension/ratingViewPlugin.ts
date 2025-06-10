@@ -1,7 +1,11 @@
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
-import { generateSymbolRegexPatterns, getSymbolSetForPattern, calculateRating, parseRatingText } from '../ratings-parser';
-import { getUnicodeCharLength, isFullOnlySymbol } from '../utils';
+import { generateSymbolRegexPatterns } from '../ratings-parser/generateSymbolRegexPatterns';
+import { getSymbolSetForPattern } from '../ratings-parser/getSymbolSetForPattern';
+import { calculateRating } from '../ratings-parser/calculateRating';
+import { parseRatingText } from '../ratings-parser/parseRatingText';
+import { getUnicodeCharLength } from '../utils/getUnicodeCharLength';
+import { isFullOnlySymbol } from '../utils/isFullOnlySymbol';
 import { LOGGING_ENABLED } from '../constants';
 import { RatingMatch } from './RatingMatch';
 import { RatingWidget } from './RatingWidget';
@@ -167,3 +171,6 @@ export const ratingViewPlugin = ViewPlugin.fromClass(
     decorations: v => v.decorations
   }
 );
+
+// Export the extension array
+export const ratingEditorExtension = [ratingViewPlugin];
