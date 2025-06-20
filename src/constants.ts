@@ -1,7 +1,26 @@
 import { SymbolSet } from './types';
 
-// Global logging control - set to false for production, true for debugging
-export const LOGGING_ENABLED = false;
+// ============================================================================
+// CRITICAL: DO NOT MODIFY THE LOGGING CONFIGURATION BELOW
+// ============================================================================
+// 
+// Logging is controlled via esbuild's sophisticated build-time mechanism:
+// - Production builds: `npm run build` (logging disabled)
+// - Debug builds: `npm run build-debug` (logging enabled via LOGGING_ENABLED=true)
+// 
+// The value below is replaced at BUILD TIME by esbuild.config.js using the
+// `define` feature. This ensures zero runtime overhead for production builds.
+// 
+// ⚠️  NEVER change this to a hardcoded boolean value!
+// ⚠️  Use the npm scripts to control logging instead:
+//     - `npm run build` for production (no logging)
+//     - `npm run build-debug` for debug builds (with logging)
+// 
+// The esbuild configuration will replace `process.env.LOGGING_ENABLED` with
+// the actual boolean value at compile time, so this becomes a constant in
+// the final bundle with no runtime cost.
+// ============================================================================
+export const LOGGING_ENABLED = process.env.LOGGING_ENABLED === 'true';
 
 // Base symbol patterns (excluding user-configurable emojis)
 export const BASE_SYMBOL_PATTERNS: SymbolSet[] = [
