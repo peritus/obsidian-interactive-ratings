@@ -159,20 +159,22 @@
  * Full-only unrated symbols (★ beyond rating in full-only systems)
  * Applied to: symbols beyond the current rating in systems with only one symbol type
  * Use for: custom styling of inactive symbols in full-only systems
- * Example: opacity: 0.3; filter: grayscale(100%);
+ * Default styling: Essential for functionality - without this, full-only ratings would be unreadable
  */
 .interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbol--unrated {
-  /* Add your custom styles here for full-only unrated symbols */
+  opacity: 0.5 !important;
+  filter: grayscale(100%) !important;
 }
 
 /* 
  * Full-only rated symbols (★ within rating in full-only systems)  
  * Applied to: symbols within the current rating in systems with only one symbol type
  * Use for: custom styling of active symbols in full-only systems
- * Example: opacity: 1; filter: none;
+ * Default styling: Ensures rated symbols remain fully visible
  */
 .interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbol--rated {
-  /* Add your custom styles here for full-only rated symbols */
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 /* Support for display symbol count different from pattern length */

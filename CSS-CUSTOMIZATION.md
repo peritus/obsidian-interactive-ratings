@@ -2,11 +2,14 @@
 
 This guide explains how to customize the appearance of interactive rating symbols using CSS snippets in Obsidian.
 
-## ⚠️ Important: No Default Visual Styling
+## ⚠️ Important: Minimal Default Styling
 
-**The Interactive Ratings plugin provides NO default visual styling for rating symbols.** All CSS classes are neutral theming hooks that allow complete customization freedom. Without custom CSS, all symbols will appear identical using your theme's default text styling.
+**The Interactive Ratings plugin applies minimal default styling to maintain functionality:**
 
-**To get started quickly, try the "Basic Styling" example below** to add visual distinction between filled, half, and empty symbols.
+- **Regular rating systems** (★☆): No default styling - symbols are visually distinct by character
+- **Full-only rating systems** (★★★★★): Essential default styling preserved - without it, ratings would be unreadable
+
+**To get started with regular rating systems, try the "Basic Styling" example below** to add visual distinction between filled, half, and empty symbols.
 
 ## New Feature: Distinct CSS Classes for Selected/Unselected Symbols
 
@@ -21,8 +24,10 @@ The Interactive Ratings plugin provides distinct CSS classes for selected (fille
 - `.interactive-rating-symbol--normal` - Legacy class (no longer used for filled/empty distinction)
 
 #### For Full-Only Rating Systems (symbols that don't have empty variants):
-- `.interactive-rating-symbol--rated` - Applied to symbols within the rating
-- `.interactive-rating-symbol--unrated` - Applied to symbols beyond the rating (grayed out)
+- `.interactive-rating-symbol--rated` - Applied to symbols within the rating (has default styling)
+- `.interactive-rating-symbol--unrated` - Applied to symbols beyond the rating (has default styling)
+
+**Important:** Full-only systems have essential default styling preserved because without it, all symbols would look identical and ratings would be unreadable. You can still override these defaults with your own CSS.
 
 ### Example CSS Snippets
 
@@ -30,7 +35,7 @@ Here are some examples of how you can customize the appearance of rating symbols
 
 #### 🚀 Quick Start: Basic Visual Distinction
 ```css
-/* Add this snippet to get started with basic visual distinction */
+/* Add this snippet to get started with basic visual distinction for regular rating systems */
 .interactive-rating-symbol--rated {
   opacity: 1;
   color: inherit;
@@ -44,10 +49,7 @@ Here are some examples of how you can customize the appearance of rating symbols
   opacity: 0.4;
 }
 
-.interactive-rating-symbol--unrated {
-  opacity: 0.3;
-  filter: grayscale(100%);
-}
+/* Note: .interactive-rating-symbol--unrated (full-only systems) already has default styling */
 ```
 
 #### 2. Make Empty Symbols More Subtle
@@ -156,14 +158,19 @@ Here are some examples of how you can customize the appearance of rating symbols
 
 ### Default Styling
 
-**The plugin applies NO default visual styling to symbol states.** All symbol state classes are provided as neutral theming hooks:
+**The plugin applies minimal default styling to maintain functionality:**
 
+**Regular Rating Systems** (★☆ - with distinct filled/empty symbols):
 - **Filled symbols** (`.interactive-rating-symbol--rated`): No default styling - add your own
 - **Half symbols** (`.interactive-rating-symbol--half`): No default styling - add your own  
 - **Empty symbols** (`.interactive-rating-symbol--empty`): No default styling - add your own
-- **Unrated symbols** (`.interactive-rating-symbol--unrated`): No default styling - add your own
 
-**Accessibility styling is preserved:** High contrast mode will automatically apply enhanced contrast styling only when users have high contrast preferences enabled. This ensures accessibility while maintaining theme neutrality in normal viewing modes.
+**Full-Only Rating Systems** (★★★★★ - single symbol type):
+- **Rated symbols** (`.interactive-rating-symbol--rated`): Default styling preserved (opacity: 1, no filter)
+- **Unrated symbols** (`.interactive-rating-symbol--unrated`): Default styling preserved (opacity: 0.5, grayscale filter)
+- **Reason**: Without default styling, full-only systems would be unreadable (all symbols would look identical)
+
+**Accessibility styling is preserved:** High contrast mode will automatically apply enhanced contrast styling only when users have high contrast preferences enabled.
 
 ### Accessibility Considerations
 
