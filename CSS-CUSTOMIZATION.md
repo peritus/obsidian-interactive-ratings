@@ -2,9 +2,15 @@
 
 This guide explains how to customize the appearance of interactive rating symbols using CSS snippets in Obsidian.
 
+## ⚠️ Important: No Default Visual Styling
+
+**The Interactive Ratings plugin provides NO default visual styling for rating symbols.** All CSS classes are neutral theming hooks that allow complete customization freedom. Without custom CSS, all symbols will appear identical using your theme's default text styling.
+
+**To get started quickly, try the "Basic Styling" example below** to add visual distinction between filled, half, and empty symbols.
+
 ## New Feature: Distinct CSS Classes for Selected/Unselected Symbols
 
-As of this update, the Interactive Ratings plugin now provides distinct CSS classes for selected (filled) and unselected (empty) symbols, making it easy to customize their appearance.
+The Interactive Ratings plugin provides distinct CSS classes for selected (filled), half-filled, and unselected (empty) symbols, making it easy to customize their appearance.
 
 ### Available CSS Classes
 
@@ -22,14 +28,36 @@ As of this update, the Interactive Ratings plugin now provides distinct CSS clas
 
 Here are some examples of how you can customize the appearance of rating symbols:
 
-#### 1. Make Empty Symbols More Subtle
+#### 🚀 Quick Start: Basic Visual Distinction
+```css
+/* Add this snippet to get started with basic visual distinction */
+.interactive-rating-symbol--rated {
+  opacity: 1;
+  color: inherit;
+}
+
+.interactive-rating-symbol--half {
+  opacity: 0.7;
+}
+
+.interactive-rating-symbol--empty {
+  opacity: 0.4;
+}
+
+.interactive-rating-symbol--unrated {
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+```
+
+#### 2. Make Empty Symbols More Subtle
 ```css
 .interactive-rating-symbol--empty {
   opacity: 0.3;
 }
 ```
 
-#### 2. Add Color to Filled, Half, and Empty Symbols
+#### 3. Add Color to Filled, Half, and Empty Symbols
 ```css
 .interactive-rating-symbol--rated {
   color: #FFD700; /* Gold color for filled stars */
@@ -44,7 +72,7 @@ Here are some examples of how you can customize the appearance of rating symbols
 }
 ```
 
-#### 3. Create Gradient Effect for Half Symbols
+#### 4. Create Gradient Effect for Half Symbols
 ```css
 .interactive-rating-symbol--rated {
   color: #FFD700;
@@ -62,7 +90,7 @@ Here are some examples of how you can customize the appearance of rating symbols
 }
 ```
 
-#### 4. Add Hover Effects
+#### 5. Add Hover Effects
 ```css
 .interactive-rating-symbol--empty:hover {
   opacity: 0.7;
@@ -81,7 +109,7 @@ Here are some examples of how you can customize the appearance of rating symbols
 }
 ```
 
-#### 5. Different Styling for Different Symbol Types
+#### 6. Different Styling for Different Symbol Types
 ```css
 /* For star ratings */
 .interactive-rating-symbol--rated:contains("★") {
@@ -102,7 +130,7 @@ Here are some examples of how you can customize the appearance of rating symbols
 }
 ```
 
-#### 6. Add Drop Shadow to Filled and Half Symbols
+#### 7. Add Drop Shadow to Filled and Half Symbols
 ```css
 .interactive-rating-symbol--rated {
   text-shadow: 0 0 3px rgba(255, 215, 0, 0.6);
@@ -128,15 +156,20 @@ Here are some examples of how you can customize the appearance of rating symbols
 
 ### Default Styling
 
-By default, the plugin applies:
-- **Filled symbols** (`.interactive-rating-symbol--rated`): Full opacity, no filters
-- **Half symbols** (`.interactive-rating-symbol--half`): 80% opacity
-- **Empty symbols** (`.interactive-rating-symbol--empty`): 50% opacity
-- **High contrast mode**: Empty symbols get 30% opacity with grayscale filter, half symbols get 60% opacity with enhanced contrast for better accessibility
+**The plugin applies NO default visual styling to symbol states.** All symbol state classes are provided as neutral theming hooks:
+
+- **Filled symbols** (`.interactive-rating-symbol--rated`): No default styling - add your own
+- **Half symbols** (`.interactive-rating-symbol--half`): No default styling - add your own  
+- **Empty symbols** (`.interactive-rating-symbol--empty`): No default styling - add your own
+- **Unrated symbols** (`.interactive-rating-symbol--unrated`): No default styling - add your own
+
+**Accessibility styling is preserved:** High contrast mode will automatically apply enhanced contrast styling only when users have high contrast preferences enabled. This ensures accessibility while maintaining theme neutrality in normal viewing modes.
 
 ### Accessibility Considerations
 
-The plugin includes automatic high contrast support. When users have high contrast mode enabled, empty and half symbols will automatically receive enhanced contrast styling. You can override this by providing your own high contrast styles:
+**The plugin includes automatic high contrast support as the only built-in styling.** When users have high contrast mode enabled, empty and half symbols will automatically receive enhanced contrast styling for accessibility compliance. This accessibility styling is preserved even though no default visual styling is applied in normal viewing modes.
+
+You can override the accessibility styling by providing your own high contrast styles:
 
 ```css
 @media (prefers-contrast: high) {

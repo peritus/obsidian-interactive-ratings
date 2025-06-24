@@ -46,32 +46,62 @@
   transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-/* Active/rated symbol state */
+/* 
+ * THEMING HOOKS - Symbol State Classes
+ * ===================================
+ * The following CSS classes are provided as theming hooks for customizing 
+ * the appearance of rating symbols. No default visual styling is applied
+ * to maintain theme neutrality. Add your own styles to customize appearance.
+ * 
+ * For comprehensive styling examples and documentation, see CSS-CUSTOMIZATION.md
+ */
+
+/* 
+ * Filled/Active symbol state (★ in regular systems, active ★ in full-only systems)
+ * Applied to: symbols representing the filled portion of a rating
+ * Use for: styling fully selected symbols (e.g., color, opacity, effects)
+ */
 .interactive-rating-symbol--rated {
-  opacity: 1;
-  filter: none;
+  /* Add your custom styles here */
 }
 
-/* Inactive/unrated symbol state (for full-only symbols) */
+/* 
+ * Unrated symbol state (★ beyond rating in full-only systems)
+ * Applied to: symbols in full-only systems that are beyond the current rating
+ * Use for: styling inactive symbols in systems that only have one symbol type
+ * Note: This is different from 'empty' - these are the same symbol but inactive
+ */
 .interactive-rating-symbol--unrated {
-  opacity: 0.5;
-  filter: grayscale(100%);
+  /* Add your custom styles here */
 }
 
-/* Normal symbol state (for regular symbols) */
+/* 
+ * Normal symbol state (legacy compatibility)
+ * Applied to: symbols in legacy mode (deprecated)
+ * Note: This class is maintained for backward compatibility only
+ */
 .interactive-rating-symbol--normal {
-  opacity: 1;
-  filter: none;
+  /* Add your custom styles here */
 }
 
-/* Empty symbol state (for unselected symbols in regular rating systems) */
+/* 
+ * Empty symbol state (☆ in regular rating systems)
+ * Applied to: empty/outline symbols representing unselected portions of rating
+ * Use for: styling empty symbols in systems with distinct filled/empty symbols
+ * Note: This is different from 'unrated' - these are different symbol characters
+ */
 .interactive-rating-symbol--empty {
-  opacity: 0.5;
+  /* Add your custom styles here */
 }
 
-/* Half symbol state (for half-filled symbols in regular rating systems) */
+/* 
+ * Half symbol state (☆★ or similar in regular rating systems)
+ * Applied to: half-filled symbols representing partial ratings
+ * Use for: styling half-symbols (e.g., gradients, special colors, opacity)
+ * Common styling: gradients to show half-fill effect
+ */
 .interactive-rating-symbol--half {
-  opacity: 0.8;
+  /* Add your custom styles here */
 }
 
 /* Individual symbol spans in editor widget with half-symbol support */
@@ -111,21 +141,38 @@
   /* No visual elements */
 }
 
-/* Full-only symbol styles - auto-detected symbols that use grayed-out effect */
+/* 
+ * FULL-ONLY SYMBOL SYSTEM THEMING HOOKS
+ * =====================================
+ * The following selectors target symbols in full-only rating systems specifically.
+ * These provide more granular control when you want different styling for symbols
+ * in full-only systems (which only have one symbol type) vs regular systems.
+ * No default styling is applied - add your own styles as needed.
+ */
+
+/* Full-only symbol styles - structural transitions only */
 .interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbols span {
   transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-/* Ensure full-only unrated symbols are properly grayed out - using class-based approach */
+/* 
+ * Full-only unrated symbols (★ beyond rating in full-only systems)
+ * Applied to: symbols beyond the current rating in systems with only one symbol type
+ * Use for: custom styling of inactive symbols in full-only systems
+ * Example: opacity: 0.3; filter: grayscale(100%);
+ */
 .interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbol--unrated {
-  opacity: 0.5 !important;
-  filter: grayscale(100%) !important;
+  /* Add your custom styles here for full-only unrated symbols */
 }
 
-/* Ensure full-only rated symbols are fully visible - using class-based approach */
+/* 
+ * Full-only rated symbols (★ within rating in full-only systems)  
+ * Applied to: symbols within the current rating in systems with only one symbol type
+ * Use for: custom styling of active symbols in full-only systems
+ * Example: opacity: 1; filter: none;
+ */
 .interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbol--rated {
-  opacity: 1 !important;
-  filter: none !important;
+  /* Add your custom styles here for full-only rated symbols */
 }
 
 /* Support for display symbol count different from pattern length */
