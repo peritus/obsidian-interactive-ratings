@@ -35,19 +35,19 @@ export function previewRating(
         applySymbolState(span, 'unrated');
       }
     } else {
-      // Regular symbol behavior
+      // Regular symbol behavior with distinct states for filled/half/empty
       if (symbolRating <= newRating) {
-        // Full symbol
+        // Full symbol - apply 'rated' state
         span.textContent = symbolSet.full;
-        applySymbolState(span, 'normal');
+        applySymbolState(span, 'rated');
       } else if (symbolSet.half && halfRating <= newRating && halfRating > newRating - 0.5) {
-        // Half symbol
+        // Half symbol - apply 'half' state
         span.textContent = symbolSet.half;
-        applySymbolState(span, 'normal');
+        applySymbolState(span, 'half');
       } else {
-        // Empty symbol
+        // Empty symbol - apply 'empty' state
         span.textContent = symbolSet.empty;
-        applySymbolState(span, 'normal');
+        applySymbolState(span, 'empty');
       }
     }
   });
