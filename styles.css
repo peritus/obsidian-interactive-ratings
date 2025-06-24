@@ -64,6 +64,16 @@
   filter: none;
 }
 
+/* Empty symbol state (for unselected symbols in regular rating systems) */
+.interactive-rating-symbol--empty {
+  opacity: 0.5;
+}
+
+/* Empty symbol state (for unselected symbols in regular rating systems) */
+.interactive-rating-symbol--empty {
+  opacity: 0.5;
+}
+
 /* Individual symbol spans in editor widget with half-symbol support */
 .interactive-rating-editor-widget .interactive-rating-symbols span {
   position: relative;
@@ -148,6 +158,12 @@
 
   /* Enhanced contrast for full-only symbols using class-based approach */
   .interactive-rating-editor-widget[data-full-only="true"] .interactive-rating-symbol--unrated {
+    opacity: 0.3 !important;
+    filter: grayscale(100%) contrast(0.7) !important;
+  }
+  
+  /* Enhanced contrast for empty symbols in regular rating systems */
+  .interactive-rating-symbol--empty {
     opacity: 0.3 !important;
     filter: grayscale(100%) contrast(0.7) !important;
   }

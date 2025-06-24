@@ -32,19 +32,20 @@ export function renderRating(
         applySymbolState(span, 'unrated');
       }
     } else {
-      // Regular symbol behavior
+      // Regular symbol behavior with distinct states for filled/empty
       if (symbolRating <= rating) {
-        // Full symbol
+        // Full symbol - apply 'rated' state
         span.textContent = symbolSet.full;
+        applySymbolState(span, 'rated');
       } else if (symbolSet.half && halfRating <= rating && halfRating > rating - 0.5) {
-        // Half symbol
+        // Half symbol - apply 'rated' state 
         span.textContent = symbolSet.half;
+        applySymbolState(span, 'rated');
       } else {
-        // Empty symbol
+        // Empty symbol - apply 'empty' state
         span.textContent = symbolSet.empty;
+        applySymbolState(span, 'empty');
       }
-      // Apply normal state for regular symbols
-      applySymbolState(span, 'normal');
     }
   });
   
