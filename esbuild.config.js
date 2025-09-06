@@ -25,7 +25,7 @@ const buildOptions = {
   format: 'cjs',
   banner: { js: banner },
   define: {
-    'process.env.LOGGING_ENABLED': JSON.stringify(loggingEnabled)
+    'process.env.LOGGING_ENABLED': loggingEnabled ? '"true"' : '"false"'
   },
   external: [
     'obsidian',
