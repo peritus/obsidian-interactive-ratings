@@ -6,8 +6,9 @@ import { SymbolSet } from '../types';
  */
 export function calculateRating(pattern: string, symbolSet: SymbolSet): number {
   let rating = 0;
-  // Use array spread to properly iterate over Unicode characters
-  for (const char of [...pattern]) {
+  // Use Intl.Segmenter to properly iterate over grapheme clusters (handles ZWJ sequences)
+  const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+  for (const {segment: char} of segmenter.segment(pattern)) {
     if (char === symbolSet.full) rating += 1.0;
     else if (symbolSet.half && char === symbolSet.half) rating += 0.5;
   }
