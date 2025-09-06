@@ -8,7 +8,17 @@
     "build:debug": "LOGGING_ENABLED=true node esbuild.config.js",
     "build:watch": "node esbuild.config.js --watch",
     "build-and-install": "npm run build:debug && node install-dev.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "version:preview:patch": "bump-my-version bump patch --config-file .bumpversion-preview.toml",
+    "version:preview:minor": "bump-my-version bump minor --config-file .bumpversion-preview.toml ",
+    "version:preview:major": "bump-my-version bump major --config-file .bumpversion-preview.toml ",
+    "version:preview": "bump-my-version bump preview --config-file .bumpversion-preview.toml",
+    "version:release": "bump-my-version bump release",
+    "version:patch": "bump-my-version bump patch",
+    "version:minor": "bump-my-version bump minor",
+    "version:major": "bump-my-version bump major",
+    "version:show": "bump-my-version show-bump",
+    "version:preview:show": "bump-my-version show-bump --config-file .bumpversion-preview.toml"
   },
   "keywords": [
     "obsidianmd"

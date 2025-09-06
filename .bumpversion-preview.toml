@@ -1,33 +1,27 @@
 [tool.bumpversion]
 current_version = "1.0.7"
 
-# Parse pattern that understands both regular and preview versions
+# Parse pattern that understands both regular and preview versions  
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(?:-(?P<release>preview)\\.(?P<preview>\\d+))?"
 
-# Release serialization - always removes preview suffix
+# Preview serialization - always includes preview suffix
 serialize = [
-    "{major}.{minor}.{patch}"  # Final releases: 0.9.1
+    "{major}.{minor}.{patch}-{release}.{preview}"  # Preview versions: 0.9.1-preview.1
 ]
 
 commit = true
 tag = true
 tag_name = "v{new_version}"
-tag_message = "Release {new_version}"
+tag_message = "Preview {new_version}"
 message = "Bump version: {current_version} → {new_version}"
 regex = true
 
-# RELEASE CONFIG: Update package.json, manifest.json, AND sync preview config
+# PREVIEW CONFIG: Update package.json AND sync release config
 
 [[tool.bumpversion.files]]
 filename = "package.json"
 search = '"version": "{current_version}"'
 replace = '"version": "{new_version}"'
-
-[[tool.bumpversion.files]]
-filename = "manifest.json"
-search = '"version": "[^"]*"'
-replace = '"version": "{new_version}"'
-regex = true
 
 # Keep release config in sync
 [[tool.bumpversion.files]]
@@ -41,10 +35,9 @@ filename = ".bumpversion-preview.toml"
 search = 'current_version = "{current_version}"'
 replace = 'current_version = "{new_version}"'
 
-# Release part: preview -> stable (stable is hidden in serialization)
+# Release part: always "preview" for this config
 [tool.bumpversion.parts.release]
-values = ["preview", "stable"]
-optional_value = "stable"
+values = ["preview"]
 
 # Preview part: for incrementing preview numbers
 [tool.bumpversion.parts.preview]
