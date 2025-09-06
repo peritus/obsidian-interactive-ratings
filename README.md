@@ -56,11 +56,18 @@ You can configure which emojis are supported for rating interactions by going to
 
 **Default emojis**: `🎥🏆⭐💎🔥⚡🎯🚀💰🎖️`
 
+**ZWJ Sequence Support**: The plugin fully supports complex emojis including ZWJ (Zero Width Joiner) sequences such as:
+- 🏴‍☠️ (Pirate Flag)
+- 👨‍🚒 (Man Firefighter) 
+- 🏳️‍🌈 (Rainbow Flag)
+- And other compound emojis
+
 **Example usage**:
 - `🎥🎥🎥🎥🎥 (4/5)` Movie rating
 - `🏆🏆🏆 3/5` Achievement level  
 - `🔥🔥🔥🔥 80%` Spice level
 - `🎯🎯🎯🎯🎯🎯 (5/6)` Accuracy rating
+- `🏴‍☠️🏴‍☠️🏴‍☠️ (3/5)` Pirate movie rating
 
 
 ## Installation
