@@ -6,7 +6,7 @@ import { SymbolSet } from './types';
 // 
 // Logging is controlled via esbuild's sophisticated build-time mechanism:
 // - Production builds: `npm run build` (logging disabled)
-// - Debug builds: `npm run build-debug` (logging enabled via LOGGING_ENABLED=true)
+// - Debug builds: `npm run build:debug` (logging enabled via LOGGING_ENABLED=true)
 // 
 // The value below is replaced at BUILD TIME by esbuild.config.js using the
 // `define` feature. This ensures zero runtime overhead for production builds.
@@ -14,7 +14,7 @@ import { SymbolSet } from './types';
 // ⚠️  NEVER change this to a hardcoded boolean value!
 // ⚠️  Use the npm scripts to control logging instead:
 //     - `npm run build` for production (no logging)
-//     - `npm run build-debug` for debug builds (with logging)
+//     - `npm run build:debug` for debug builds (with logging)
 // 
 // The esbuild configuration will replace `process.env.LOGGING_ENABLED` with
 // the actual boolean value at compile time, so this becomes a constant in

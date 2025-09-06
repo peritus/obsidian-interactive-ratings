@@ -24,7 +24,7 @@ paths_blocked = [
 build = ["npm", "run", "build"]
 
 # Debug build
-build_debug = ["npm", "run", "build-debug"]
+build_debug = ["npm", "run", "build:debug"]
 
 # Type checking
 type_check = ["npm", "run", "type-check"]
