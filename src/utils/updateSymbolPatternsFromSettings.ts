@@ -14,6 +14,10 @@ export function updateSymbolPatternsFromSettings(settings: InteractiveRatingsSet
     const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
     const emojis = Array.from(segmenter.segment(settings.supportedEmojis), segment => segment.segment);
     
+    if (LOGGING_ENABLED) {
+      console.log('[InteractiveRatings] Parsed emojis from settings:', emojis);
+    }
+    
     for (const emoji of emojis) {
       if (emoji.trim()) { // Skip empty characters and whitespace
         newPatterns.push({
