@@ -1,6 +1,6 @@
 {
   "name": "obsidian-interactive-ratings",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Edit symbol ratings in your Obsidian notes interactively.",
   "main": "main.js",
   "scripts": {
