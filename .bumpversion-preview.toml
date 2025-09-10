@@ -11,7 +11,7 @@ serialize = [
 
 commit = true
 tag = true
-tag_name = "v{new_version}"
+tag_name = "{new_version}"
 tag_message = "Preview {new_version}"
 message = "Bump version: {current_version} → {new_version}"
 regex = true
